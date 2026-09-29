@@ -1,0 +1,268 @@
+{
+  "id": "comb-half-adder",
+  "name": "Half Adder Combinational Test",
+  "description": "1-bit Half Adder circuit.",
+  "version": "1.0.0",
+  "createdAt": 1790681007859,
+  "updatedAt": 1790681007859,
+  "components": [
+    {
+      "id": "sw_a",
+      "type": "SWITCH",
+      "label": "A",
+      "x": 100,
+      "y": 90,
+      "rotation": 0,
+      "state": {
+        "toggle": true
+      },
+      "inputs": [
+        {
+          "id": "sw_a_in_0",
+          "name": "IN",
+          "type": "input",
+          "index": 0,
+          "value": "Z",
+          "voltage": 0,
+          "relativeX": 0,
+          "relativeY": 25
+        }
+      ],
+      "outputs": [
+        {
+          "id": "sw_a_out_0",
+          "name": "OUT",
+          "type": "output",
+          "index": 0,
+          "value": 1,
+          "voltage": 5,
+          "relativeX": 70,
+          "relativeY": 25
+        }
+      ]
+    },
+    {
+      "id": "sw_b",
+      "type": "SWITCH",
+      "label": "B",
+      "x": 100,
+      "y": 200,
+      "rotation": 0,
+      "state": {
+        "toggle": false
+      },
+      "inputs": [
+        {
+          "id": "sw_b_in_0",
+          "name": "IN",
+          "type": "input",
+          "index": 0,
+          "value": "Z",
+          "voltage": 0,
+          "relativeX": 0,
+          "relativeY": 25
+        }
+      ],
+      "outputs": [
+        {
+          "id": "sw_b_out_0",
+          "name": "OUT",
+          "type": "output",
+          "index": 0,
+          "value": 0,
+          "voltage": 0,
+          "relativeX": 70,
+          "relativeY": 25
+        }
+      ]
+    },
+    {
+      "id": "gate_xor",
+      "type": "XOR",
+      "label": "XOR (Sum)",
+      "x": 280,
+      "y": 80,
+      "rotation": 0,
+      "inputs": [
+        {
+          "id": "gate_xor_in_0",
+          "name": "A",
+          "type": "input",
+          "index": 0,
+          "value": 1,
+          "voltage": 5,
+          "relativeX": 0,
+          "relativeY": 20
+        },
+        {
+          "id": "gate_xor_in_1",
+          "name": "B",
+          "type": "input",
+          "index": 1,
+          "value": 0,
+          "voltage": 0,
+          "relativeX": 0,
+          "relativeY": 40
+        }
+      ],
+      "outputs": [
+        {
+          "id": "gate_xor_out_0",
+          "name": "OUT",
+          "type": "output",
+          "index": 0,
+          "value": 1,
+          "voltage": 5,
+          "relativeX": 90,
+          "relativeY": 30
+        }
+      ]
+    },
+    {
+      "id": "gate_and",
+      "type": "AND",
+      "label": "AND (Carry)",
+      "x": 280,
+      "y": 200,
+      "rotation": 0,
+      "inputs": [
+        {
+          "id": "gate_and_in_0",
+          "name": "A",
+          "type": "input",
+          "index": 0,
+          "value": 1,
+          "voltage": 5,
+          "relativeX": 0,
+          "relativeY": 20
+        },
+        {
+          "id": "gate_and_in_1",
+          "name": "B",
+          "type": "input",
+          "index": 1,
+          "value": 0,
+          "voltage": 0,
+          "relativeX": 0,
+          "relativeY": 40
+        }
+      ],
+      "outputs": [
+        {
+          "id": "gate_and_out_0",
+          "name": "OUT",
+          "type": "output",
+          "index": 0,
+          "value": 0,
+          "voltage": 0,
+          "relativeX": 90,
+          "relativeY": 30
+        }
+      ]
+    },
+    {
+      "id": "led_sum",
+      "type": "LED",
+      "label": "Sum (S)",
+      "x": 440,
+      "y": 85,
+      "rotation": 0,
+      "state": {
+        "ledColor": "green"
+      },
+      "inputs": [
+        {
+          "id": "led_sum_in_0",
+          "name": "IN",
+          "type": "input",
+          "index": 0,
+          "value": 1,
+          "voltage": 5,
+          "relativeX": 0,
+          "relativeY": 25
+        }
+      ],
+      "outputs": []
+    },
+    {
+      "id": "led_carry",
+      "type": "LED",
+      "label": "Carry (C)",
+      "x": 440,
+      "y": 205,
+      "rotation": 0,
+      "state": {
+        "ledColor": "red"
+      },
+      "inputs": [
+        {
+          "id": "led_carry_in_0",
+          "name": "IN",
+          "type": "input",
+          "index": 0,
+          "value": 0,
+          "voltage": 0,
+          "relativeX": 0,
+          "relativeY": 25
+        }
+      ],
+      "outputs": []
+    }
+  ],
+  "wires": [
+    {
+      "id": "w1",
+      "fromComponentId": "sw_a",
+      "fromPinId": "sw_a_out_0",
+      "toComponentId": "gate_xor",
+      "toPinId": "gate_xor_in_0",
+      "value": 1,
+      "voltage": 5
+    },
+    {
+      "id": "w2",
+      "fromComponentId": "sw_b",
+      "fromPinId": "sw_b_out_0",
+      "toComponentId": "gate_xor",
+      "toPinId": "gate_xor_in_1",
+      "value": 0,
+      "voltage": 0
+    },
+    {
+      "id": "w3",
+      "fromComponentId": "sw_a",
+      "fromPinId": "sw_a_out_0",
+      "toComponentId": "gate_and",
+      "toPinId": "gate_and_in_0",
+      "value": 1,
+      "voltage": 5
+    },
+    {
+      "id": "w4",
+      "fromComponentId": "sw_b",
+      "fromPinId": "sw_b_out_0",
+      "toComponentId": "gate_and",
+      "toPinId": "gate_and_in_1",
+      "value": 0,
+      "voltage": 0
+    },
+    {
+      "id": "w5",
+      "fromComponentId": "gate_xor",
+      "fromPinId": "gate_xor_out_0",
+      "toComponentId": "led_sum",
+      "toPinId": "led_sum_in_0",
+      "value": 1,
+      "voltage": 5
+    },
+    {
+      "id": "w6",
+      "fromComponentId": "gate_and",
+      "fromPinId": "gate_and_out_0",
+      "toComponentId": "led_carry",
+      "toPinId": "led_carry_in_0",
+      "value": 0,
+      "voltage": 0
+    }
+  ]
+}

@@ -1,0 +1,121 @@
+{
+  "id": "comb-not-gate",
+  "name": "NOT Gate Combinational Test",
+  "description": "Single-input CMOS NOT inverter combinational circuit.",
+  "version": "1.0.0",
+  "createdAt": 1727580000000,
+  "updatedAt": 1727580000000,
+  "components": [
+    {
+      "id": "sw_a",
+      "type": "SWITCH",
+      "label": "A",
+      "x": 130,
+      "y": 140,
+      "rotation": 0,
+      "state": {
+        "toggle": true
+      },
+      "inputs": [
+        {
+          "id": "sw_a_in_0",
+          "name": "IN",
+          "type": "input",
+          "index": 0,
+          "value": "Z",
+          "voltage": 0,
+          "relativeX": 0,
+          "relativeY": 25
+        }
+      ],
+      "outputs": [
+        {
+          "id": "sw_a_out_0",
+          "name": "OUT",
+          "type": "output",
+          "index": 0,
+          "value": 1,
+          "voltage": 5.0,
+          "relativeX": 70,
+          "relativeY": 25
+        }
+      ]
+    },
+    {
+      "id": "gate_not",
+      "type": "NOT",
+      "label": "NOT Gate",
+      "x": 290,
+      "y": 140,
+      "rotation": 0,
+      "inputs": [
+        {
+          "id": "gate_not_in_0",
+          "name": "IN",
+          "type": "input",
+          "index": 0,
+          "value": 1,
+          "voltage": 5.0,
+          "relativeX": 0,
+          "relativeY": 25
+        }
+      ],
+      "outputs": [
+        {
+          "id": "gate_not_out_0",
+          "name": "OUT",
+          "type": "output",
+          "index": 0,
+          "value": 0,
+          "voltage": 0.0,
+          "relativeX": 80,
+          "relativeY": 25
+        }
+      ]
+    },
+    {
+      "id": "out_y",
+      "type": "LED",
+      "label": "Y",
+      "x": 440,
+      "y": 140,
+      "rotation": 0,
+      "state": {
+        "ledColor": "amber"
+      },
+      "inputs": [
+        {
+          "id": "out_y_in_0",
+          "name": "IN",
+          "type": "input",
+          "index": 0,
+          "value": 0,
+          "voltage": 0.0,
+          "relativeX": 0,
+          "relativeY": 25
+        }
+      ],
+      "outputs": []
+    }
+  ],
+  "wires": [
+    {
+      "id": "w1",
+      "fromComponentId": "sw_a",
+      "fromPinId": "sw_a_out_0",
+      "toComponentId": "gate_not",
+      "toPinId": "gate_not_in_0",
+      "value": 1,
+      "voltage": 5.0
+    },
+    {
+      "id": "w2",
+      "fromComponentId": "gate_not",
+      "fromPinId": "gate_not_out_0",
+      "toComponentId": "out_y",
+      "toPinId": "out_y_in_0",
+      "value": 0,
+      "voltage": 0.0
+    }
+  ]
+}

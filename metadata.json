@@ -1,0 +1,6 @@
+{
+  "name": "LogiCraft - Digital Logic Circuit Simulator",
+  "description": "Interactive web-based digital logic circuit simulator with real-time simulation, transistor-level views, tutorials, templates, and mobile touch support.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

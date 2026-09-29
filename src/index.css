@@ -1,0 +1,14 @@
+@import "tailwindcss";
+
+@theme {
+  --color-galway-maroon: #840038;
+  --color-galway-maroon-hover: #9b0f48;
+  --color-galway-maroon-dark: #5e0028;
+  --color-galway-gold: #c59b27;
+  --font-serif: "Spectral", Georgia, "Times New Roman", serif;
+}
+
+:root {
+  --galway-maroon: #840038;
+  --galway-maroon-hover: #9b0f48;
+}

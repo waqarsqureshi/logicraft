@@ -1,0 +1,175 @@
+{
+  "id": "comb-or-gate",
+  "name": "OR Gate Combinational Test",
+  "description": "Standard two-input OR gate combinational circuit.",
+  "version": "1.0.0",
+  "createdAt": 1727580000000,
+  "updatedAt": 1727580000000,
+  "components": [
+    {
+      "id": "sw_a",
+      "type": "SWITCH",
+      "label": "A",
+      "x": 120,
+      "y": 100,
+      "rotation": 0,
+      "state": {
+        "toggle": false
+      },
+      "inputs": [
+        {
+          "id": "sw_a_in_0",
+          "name": "IN",
+          "type": "input",
+          "index": 0,
+          "value": "Z",
+          "voltage": 0,
+          "relativeX": 0,
+          "relativeY": 25
+        }
+      ],
+      "outputs": [
+        {
+          "id": "sw_a_out_0",
+          "name": "OUT",
+          "type": "output",
+          "index": 0,
+          "value": 0,
+          "voltage": 0.0,
+          "relativeX": 70,
+          "relativeY": 25
+        }
+      ]
+    },
+    {
+      "id": "sw_b",
+      "type": "SWITCH",
+      "label": "B",
+      "x": 120,
+      "y": 200,
+      "rotation": 0,
+      "state": {
+        "toggle": true
+      },
+      "inputs": [
+        {
+          "id": "sw_b_in_0",
+          "name": "IN",
+          "type": "input",
+          "index": 0,
+          "value": "Z",
+          "voltage": 0,
+          "relativeX": 0,
+          "relativeY": 25
+        }
+      ],
+      "outputs": [
+        {
+          "id": "sw_b_out_0",
+          "name": "OUT",
+          "type": "output",
+          "index": 0,
+          "value": 1,
+          "voltage": 5.0,
+          "relativeX": 70,
+          "relativeY": 25
+        }
+      ]
+    },
+    {
+      "id": "gate_or",
+      "type": "OR",
+      "label": "OR Gate",
+      "x": 290,
+      "y": 140,
+      "rotation": 0,
+      "inputs": [
+        {
+          "id": "gate_or_in_0",
+          "name": "A",
+          "type": "input",
+          "index": 0,
+          "value": 0,
+          "voltage": 0.0,
+          "relativeX": 0,
+          "relativeY": 20
+        },
+        {
+          "id": "gate_or_in_1",
+          "name": "B",
+          "type": "input",
+          "index": 1,
+          "value": 1,
+          "voltage": 5.0,
+          "relativeX": 0,
+          "relativeY": 40
+        }
+      ],
+      "outputs": [
+        {
+          "id": "gate_or_out_0",
+          "name": "OUT",
+          "type": "output",
+          "index": 0,
+          "value": 1,
+          "voltage": 5.0,
+          "relativeX": 90,
+          "relativeY": 30
+        }
+      ]
+    },
+    {
+      "id": "out_y",
+      "type": "LED",
+      "label": "Y",
+      "x": 450,
+      "y": 145,
+      "rotation": 0,
+      "state": {
+        "ledColor": "blue"
+      },
+      "inputs": [
+        {
+          "id": "out_y_in_0",
+          "name": "IN",
+          "type": "input",
+          "index": 0,
+          "value": 1,
+          "voltage": 5.0,
+          "relativeX": 0,
+          "relativeY": 25
+        }
+      ],
+      "outputs": []
+    }
+  ],
+  "wires": [
+    {
+      "id": "w1",
+      "fromComponentId": "sw_a",
+      "fromPinId": "sw_a_out_0",
+      "toComponentId": "gate_or",
+      "toPinId": "gate_or_in_0",
+      "value": 0,
+      "voltage": 0.0
+    },
+    {
+      "id": "w2",
+      "fromComponentId": "sw_b",
+      "fromPinId": "sw_b_out_0",
+      "toComponentId": "gate_or",
+      "toPinId": "gate_or_in_1",
+      "value": 1,
+      "voltage": 5.0
+    },
+    {
+      "id": "w3",
+      "fromComponentId": "gate_or",
+      "fromPinId": "gate_or_out_0",
+      "toComponentId": "out_y",
+      "toPinId": "out_y_in_0",
+      "value": 1,
+      "voltage": 5.0
+    }
+  ]
+}
