@@ -398,7 +398,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
       {/* ========================================================================= */}
       {/* 2. TABLET & DESKTOP NAVIGATION BAR (>= 768px: iPad, Laptops, Desktops)    */}
       {/* ========================================================================= */}
-      <div className="hidden md:flex items-center justify-between h-13 px-2 sm:px-2.5 lg:px-3 pr-3 sm:pr-4 lg:pr-5 gap-1 sm:gap-1.5 w-full max-w-full overflow-visible">
+      <div className="hidden md:flex items-center justify-between h-13 px-2 sm:px-2.5 lg:px-3 pr-4 sm:pr-5 lg:pr-6 gap-1 sm:gap-1.5 w-full max-w-full overflow-visible">
         {/* Left: Brand Logo & Project Name (Squeezed for optimal screen fit) */}
         <div className="flex items-center gap-1 sm:gap-1.5 shrink min-w-0">
           {/* Palette toggle button: Squeezed Side Tab button */}
@@ -512,7 +512,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
         </div>
 
         {/* Right: Analytical Tools & Action Buttons (Always securely bounded on PC Chrome) */}
-        <div className="flex items-center gap-1 sm:gap-1.5 shrink-0 pr-0.5 sm:pr-1">
+        <div className="flex items-center gap-1 sm:gap-1.5 shrink-0 pr-1 mr-1">
           {/* Ultra-wide shortcuts (only on >= 1800px monitors) */}
           <div className="hidden min-[1800px]:flex items-center gap-1">
             {/* Auto-Pulldown Toggle */}
