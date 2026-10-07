@@ -1,17 +1,17 @@
-# LogiCraft 🔌
+# LogiCraft 
 
 A powerful, interactive **digital logic circuit simulator** built with React and TypeScript. Design, simulate, and analyze digital circuits with an intuitive canvas interface, comprehensive component library, and advanced analysis tools.
 
 ## Features
 
-### 🎨 Interactive Circuit Design
+###  Interactive Circuit Design
 - **Drag-and-drop canvas** with intuitive component placement
 - **Real-time waveform visualization** for circuit analysis
 - **Auto-pulldown** option for unconnected gate inputs
 - **Undo/Redo** support for easy circuit modifications
 - **Theme toggle** (dark/light mode)
 
-### 🧩 Comprehensive Component Library
+###  Comprehensive Component Library
 - **Basic Gates**: AND, OR, NOT, NAND, NOR, XOR, XNOR
 - **Input Components**: Toggle switches, clock generators
 - **Output Components**: LEDs, displays
@@ -21,21 +21,21 @@ A powerful, interactive **digital logic circuit simulator** built with React and
 - **Measurement Tools**: Digital multimeter, timing analyzer/oscilloscope
 - **Transistor Models**: CMOS transistor visualization
 
-### 📊 Advanced Analysis Tools
+###  Advanced Analysis Tools
 - **Truth Table Generator**: Automatic truth table computation for combinational circuits
 - **Timing Diagram Analyzer**: Waveform visualization and timing analysis
 - **Digital Multimeter**: DC voltage and logic state measurement
 - **Oscilloscope**: Real-time waveform capture and display
 - **Error Detection**: Built-in error feedback for circuit issues
 
-### 📚 Educational Features
+###  Educational Features
 - **Interactive Tutorials**: Step-by-step lessons from transistors to complex circuits
 - **Circuit Templates**: Pre-built templates for learning different circuit types
 - **Difficulty Levels**: Beginner, Intermediate, and Advanced tutorials
 - **Inside Gate Modal**: Explore transistor-level internals of logic gates
 - **Project Manager**: Save, load, and organize circuit projects
 
-### 💾 Import/Export & Sharing
+###  Import/Export & Sharing
 - **JSON Export**: Save circuit designs as portable JSON files
 - **Shareable URLs**: Generate shareable links for circuit designs (URL hash encoding)
 - **File Upload**: Import previously saved circuit files
