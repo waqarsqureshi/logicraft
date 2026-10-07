@@ -16,7 +16,7 @@ import { simulateCircuit } from './engine/simulation';
 import { getDefaultProject, loadCurrentProject, saveCurrentProject } from './utils/storage';
 import { soundFx } from './utils/audio';
 import { TutorialLesson } from './data/tutorials';
-import { Cpu } from 'lucide-react';
+import { ChevronRight, Cpu } from 'lucide-react';
 
 // Components
 import { TopNavbar } from './components/toolbar/TopNavbar';
@@ -294,6 +294,24 @@ export default function App() {
     [handleUpdateProject]
   );
 
+  // Select Playground (Blank canvas where student develops any circuit and exports as JSON)
+  const handleSelectPlayground = useCallback(() => {
+    setActiveBenchmarkId('playground');
+    setSelectedCompId(null);
+    setSelectedWireId(null);
+    handleUpdateProject({
+      id: 'playground',
+      name: 'Playground (Custom Circuit)',
+      description: 'Blank student playground canvas. Develop any circuit freely and export using the share icon as JSON.',
+      version: '1.0.0',
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      components: [],
+      wires: [],
+      autoPulldown: false,
+    });
+  }, [handleUpdateProject]);
+
   return (
     <div className={`flex flex-col h-screen w-screen overflow-hidden font-sans transition-colors duration-150 ${
       theme === 'light' ? 'bg-slate-100 text-slate-800' : 'bg-slate-950 text-slate-100'
@@ -329,6 +347,7 @@ export default function App() {
         onToggleAutoPulldown={handleToggleAutoPulldown}
         activeBenchmarkId={activeBenchmarkId}
         onSelectBenchmark={handleSelectBenchmark}
+        onSelectPlayground={handleSelectPlayground}
       />
 
       {/* 2. Real-time Diagnostics Feedback Advisory */}
@@ -345,12 +364,13 @@ export default function App() {
         {!isPaletteOpen && (
           <button
             onClick={() => setIsPaletteOpen(true)}
-            className="absolute left-0 top-16 z-30 flex items-center gap-1.5 px-2.5 py-3 rounded-r-2xl shadow-2xl border border-l-0 transition-all cursor-pointer bg-[#840038] hover:bg-[#9e0044] text-white border-rose-900/50 group"
+            className="absolute left-0 top-16 z-30 flex items-center gap-1.5 px-3 py-3.5 rounded-r-2xl shadow-2xl border border-l-0 transition-all cursor-pointer bg-[#840038] hover:bg-[#9e0044] text-white border-rose-900/50 group"
             title="Open Component Library Side Tab"
           >
+            <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
             <Cpu className="w-4 h-4 group-hover:scale-110 transition-transform" />
             <span className="text-[11px] font-bold [writing-mode:vertical-rl] tracking-wider uppercase">
-              Components
+              Side Tab • Components
             </span>
           </button>
         )}

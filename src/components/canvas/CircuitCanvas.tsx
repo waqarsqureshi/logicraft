@@ -708,7 +708,7 @@ export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
                 {/* Input Pins */}
                 {comp.inputs.map((pin) => {
                   const isHovered = hoveredPinId === pin.id;
-                  const isHigh = pin.value === 1;
+                  const isHigh = isSimRunning && pin.value === 1;
                   return (
                     <g
                       key={pin.id}
@@ -750,7 +750,7 @@ export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
                 {/* Output Pins */}
                 {comp.outputs.map((pin) => {
                   const isHovered = hoveredPinId === pin.id;
-                  const isHigh = pin.value === 1;
+                  const isHigh = isSimRunning && pin.value === 1;
                   return (
                     <g
                       key={pin.id}

@@ -9,6 +9,7 @@ import { COMPONENT_DEFINITIONS } from '../../engine/definitions';
 import {
   Activity,
   Binary,
+  ChevronLeft,
   Cpu,
   Layers,
   Search,
@@ -40,11 +41,11 @@ export const ComponentPalette: React.FC<ComponentPaletteProps> = ({
     { id: 'gates', label: 'Gates', icon: <Binary className="w-4 h-4" /> },
     { id: 'inputs', label: 'Inputs', icon: <ToggleLeft className="w-4 h-4" /> },
     { id: 'outputs', label: 'Outputs', icon: <Activity className="w-4 h-4" /> },
-    { id: 'analysis', label: 'Measurement / Analysis', icon: <Activity className="w-4 h-4 text-emerald-400" /> },
-    { id: 'transistors', label: 'Transistors', icon: <Cpu className="w-4 h-4 text-emerald-400" /> },
-    { id: 'arithmetic', label: 'Math', icon: <Cpu className="w-4 h-4" /> },
-    { id: 'sequential', label: 'Memory', icon: <Sliders className="w-4 h-4" /> },
-    { id: 'plexers', label: 'Plexers', icon: <Layers className="w-4 h-4" /> },
+    { id: 'sequential', label: 'Latches & Flip-Flops', icon: <Sliders className="w-4 h-4 text-sky-400" /> },
+    { id: 'plexers', label: 'MUX & Decoders', icon: <Layers className="w-4 h-4 text-purple-400" /> },
+    { id: 'arithmetic', label: 'Math & BCD', icon: <Cpu className="w-4 h-4 text-amber-400" /> },
+    { id: 'analysis', label: 'Measurement / Scope', icon: <Activity className="w-4 h-4 text-emerald-400" /> },
+    { id: 'transistors', label: 'Transistors', icon: <Cpu className="w-4 h-4 text-rose-400" /> },
   ];
 
   const allComps = Object.values(COMPONENT_DEFINITIONS);
@@ -71,12 +72,21 @@ export const ComponentPalette: React.FC<ComponentPaletteProps> = ({
 
   return (
     <aside
-      className={`fixed md:static inset-y-0 left-0 z-40 flex flex-col w-72 md:w-80 shadow-2xl transition-all duration-150 border-r ${
+      className={`fixed md:static inset-y-0 left-0 z-40 relative flex flex-col w-72 md:w-80 shadow-2xl transition-all duration-150 border-r ${
         theme === 'light'
           ? 'bg-white border-slate-200 text-slate-800'
           : 'bg-slate-900 border-slate-800 text-slate-100'
       } ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}
     >
+      {/* Dock / Collapse side tab handle on desktop outer border */}
+      <button
+        onClick={onClose}
+        className="hidden md:flex absolute -right-3 top-16 z-50 items-center justify-center w-6 h-9 rounded-r-lg bg-[#840038] hover:bg-[#9e0044] text-white shadow-md border border-l-0 border-rose-900/50 cursor-pointer group"
+        title="Collapse Side Tab"
+        aria-label="Collapse Side Tab"
+      >
+        <ChevronLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform" />
+      </button>
       {/* Header */}
       <div className={`flex items-center justify-between p-4 border-b ${
         theme === 'light' ? 'border-slate-200' : 'border-slate-800'

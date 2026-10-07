@@ -67,6 +67,7 @@ interface TopNavbarProps {
   onToggleAutoPulldown: () => void;
   activeBenchmarkId?: string | null;
   onSelectBenchmark?: (benchmark: CombinationalCircuitBenchmark) => void;
+  onSelectPlayground?: () => void;
 }
 
 export const TopNavbar: React.FC<TopNavbarProps> = ({
@@ -94,6 +95,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
   onToggleAutoPulldown,
   activeBenchmarkId,
   onSelectBenchmark,
+  onSelectPlayground,
 }) => {
   // Mobile slide-out drawer state
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
@@ -151,23 +153,92 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
       value={activeBenchmarkId || ''}
       onChange={(e) => {
         const bId = e.target.value;
-        if (bId && onSelectBenchmark) {
+        if (bId === 'playground') {
+          if (onSelectPlayground) onSelectPlayground();
+        } else if (bId && onSelectBenchmark) {
           const b = COMBINATIONAL_CIRCUITS.find((c) => c.id === bId);
           if (b) onSelectBenchmark(b);
         }
       }}
-      className={`text-xs font-semibold px-2 py-1.5 rounded-xl outline-none cursor-pointer border transition-colors w-full max-w-[140px] sm:max-w-[170px] md:max-w-[130px] lg:max-w-[200px] truncate ${
-        isLight
+      className={`text-xs font-semibold px-2 py-1.5 rounded-xl outline-none cursor-pointer border transition-colors w-full max-w-[140px] sm:max-w-[170px] md:max-w-[130px] lg:max-w-[210px] truncate ${
+        activeBenchmarkId === 'playground'
+          ? 'bg-[#840038] text-white border-rose-900 focus:ring-1 focus:ring-rose-400'
+          : isLight
           ? 'bg-white text-slate-800 border-slate-300 hover:border-slate-400 focus:border-[#840038]'
           : 'bg-slate-900 text-slate-100 border-slate-700 hover:border-slate-600 focus:border-rose-400'
       }`}
-      title="Sample Combinational Logic Circuits (Select to load onto canvas)"
+      title="Sample Circuits & Student Playground (Select to load or design freely)"
     >
       <option value="" disabled>
         ⚡ Sample Circuit...
       </option>
-      <optgroup label="Standard Logic Gates" className="font-bold text-slate-400">
-        {COMBINATIONAL_CIRCUITS.map((item) => (
+      <option
+        value="playground"
+        className={isLight ? 'text-[#840038] font-bold bg-rose-50' : 'text-rose-300 font-bold bg-slate-900'}
+      >
+        🎨 Playground (Blank Canvas)
+      </option>
+      <optgroup label="Basic & Universal Logic Gates" className="font-bold text-slate-400">
+        {COMBINATIONAL_CIRCUITS.filter(
+          (c) => c.category === 'Simple Gates' || c.category === 'Universal Gates'
+        ).map((item) => (
+          <option
+            key={item.id}
+            value={item.id}
+            className={isLight ? 'text-slate-800 bg-white' : 'text-slate-100 bg-slate-900'}
+          >
+            {item.name} ({item.primaryEquation})
+          </option>
+        ))}
+      </optgroup>
+      <optgroup label="Multiplexers (2:1, 4:1, 8:1, 16:1 & Internal)" className="font-bold text-slate-400">
+        {COMBINATIONAL_CIRCUITS.filter(
+          (c) => c.category === 'Multiplexers' || c.category === 'Data Routing'
+        ).map((item) => (
+          <option
+            key={item.id}
+            value={item.id}
+            className={isLight ? 'text-slate-800 bg-white' : 'text-slate-100 bg-slate-900'}
+          >
+            {item.name} ({item.primaryEquation})
+          </option>
+        ))}
+      </optgroup>
+      <optgroup label="Decoders (2:4, 3:8, 4:16)" className="font-bold text-slate-400">
+        {COMBINATIONAL_CIRCUITS.filter((c) => c.category === 'Decoders').map((item) => (
+          <option
+            key={item.id}
+            value={item.id}
+            className={isLight ? 'text-slate-800 bg-white' : 'text-slate-100 bg-slate-900'}
+          >
+            {item.name} ({item.primaryEquation})
+          </option>
+        ))}
+      </optgroup>
+      <optgroup label="Sequential Latches & Flip-Flops" className="font-bold text-slate-400">
+        {COMBINATIONAL_CIRCUITS.filter((c) => c.category === 'Sequential & Latches').map((item) => (
+          <option
+            key={item.id}
+            value={item.id}
+            className={isLight ? 'text-slate-800 bg-white' : 'text-slate-100 bg-slate-900'}
+          >
+            {item.name} ({item.primaryEquation})
+          </option>
+        ))}
+      </optgroup>
+      <optgroup label="Counters & BCD Displays" className="font-bold text-slate-400">
+        {COMBINATIONAL_CIRCUITS.filter((c) => c.category === 'Counters & Displays').map((item) => (
+          <option
+            key={item.id}
+            value={item.id}
+            className={isLight ? 'text-slate-800 bg-white' : 'text-slate-100 bg-slate-900'}
+          >
+            {item.name} ({item.primaryEquation})
+          </option>
+        ))}
+      </optgroup>
+      <optgroup label="Arithmetic Adders" className="font-bold text-slate-400">
+        {COMBINATIONAL_CIRCUITS.filter((c) => c.category === 'Arithmetic').map((item) => (
           <option
             key={item.id}
             value={item.id}
@@ -201,12 +272,18 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
                 ? 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200'
                 : 'bg-slate-800 text-slate-200 border-slate-700 hover:bg-slate-700'
             }`}
-            title="Open Component Library (Gates, Inputs, Outputs)"
+            title="Open Component Library Side Tab (Gates, Inputs, Outputs)"
           >
             <Menu className="w-4 h-4" />
           </button>
 
-          <GalwayLogo variant="compact" theme={theme} size="sm" />
+          {/* Crest icon on mobile (< sm) to prevent crowding; compact with title on sm: */}
+          <div className="block sm:hidden">
+            <GalwayLogo variant="icon" theme={theme} size="sm" />
+          </div>
+          <div className="hidden sm:block">
+            <GalwayLogo variant="compact" theme={theme} size="sm" />
+          </div>
         </div>
 
         {/* Center: Play / Pause Quick Simulator Pill */}
@@ -250,15 +327,15 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
         </div>
 
         {/* Right: 1-Click Truth Table & Slide-Out Drawer Menu Trigger */}
-        <div className="flex items-center gap-1 shrink-0">
-          {/* Direct 1-Click Truth Table button on Mobile - sized so it NEVER cuts off */}
+        <div className="flex items-center gap-1.5 shrink-0 min-w-0">
+          {/* Direct 1-Click Truth Table button on Mobile - sized & styled with generous room so it NEVER cuts off */}
           <button
             onClick={onOpenTruthTable}
-            className="flex items-center justify-center gap-1 px-2 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-xs transition-transform active:scale-95 cursor-pointer shrink-0"
+            className="flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-xs transition-transform active:scale-95 cursor-pointer shrink-0"
             title="Generate Truth Table & Mathematical Boolean Equations"
           >
             <Table className="w-3.5 h-3.5 shrink-0" />
-            <span className="text-[10px] font-bold hidden xs:inline sm:inline">Table</span>
+            <span className="text-[11px] font-bold">Table</span>
           </button>
 
           {/* Mobile Drawer Menu Toggle (Hamburger / App Actions) */}
@@ -324,10 +401,10 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
       <div className="hidden md:flex items-center justify-between h-14 px-2.5 md:px-4 lg:px-5 gap-1.5 sm:gap-2 w-full">
         {/* Left: Brand Logo & Project Name */}
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-          {/* Palette toggle button (Computer, Tablet & Mobile) */}
+          {/* Palette toggle button: Explicitly labeled "Side Tab" for desktop & tablet */}
           <button
             onClick={onTogglePalette}
-            className={`p-1.5 sm:p-2 rounded-xl border transition-all cursor-pointer ${
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border transition-all cursor-pointer ${
               isPaletteOpen
                 ? 'bg-[#840038]/15 border-[#840038]/40 text-[#840038] dark:text-rose-300 shadow-xs'
                 : isLight
@@ -336,7 +413,8 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
             }`}
             title={isPaletteOpen ? 'Hide Component Library Side Tab' : 'Show Component Library Side Tab'}
           >
-            <Menu className="w-4 h-4 sm:w-5 sm:h-5" />
+            <Menu className="w-4 h-4" />
+            <span className="text-xs font-semibold">Side Tab</span>
           </button>
 
           {/* Official University of Galway Brand Logo: Compact on tablet, Full landscape on desktop */}
@@ -780,21 +858,49 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
                 />
               </div>
 
-              {/* Section 1: Combinational Sample Circuits */}
+              {/* Section 1: Combinational Sample Circuits & Playground */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-[11px] font-bold uppercase tracking-wider text-[#840038] dark:text-rose-400 flex items-center gap-1.5">
                     <Sparkles className="w-3.5 h-3.5" />
-                    Sample Circuits
+                    Canvas & Circuits
                   </span>
-                  {activeBenchmark && (
+                  {activeBenchmarkId === 'playground' ? (
+                    <span className="text-[10px] font-mono font-bold text-rose-400">
+                      Playground
+                    </span>
+                  ) : activeBenchmark ? (
                     <span className="text-[10px] font-mono font-bold text-slate-400">
                       {activeBenchmark.shortLabel}
                     </span>
-                  )}
+                  ) : null}
                 </div>
 
-                <div className="grid grid-cols-2 gap-1.5">
+                {/* Playground Blank Canvas Option on Top */}
+                <button
+                  onClick={() => {
+                    if (onSelectPlayground) onSelectPlayground();
+                    setIsMobileDrawerOpen(false);
+                  }}
+                  className={`w-full p-2.5 rounded-xl text-left border transition-all cursor-pointer flex items-center justify-between ${
+                    activeBenchmarkId === 'playground'
+                      ? 'bg-[#840038] border-[#840038] text-white shadow-xs'
+                      : isLight
+                      ? 'bg-rose-50 hover:bg-rose-100 border-rose-200 text-rose-900'
+                      : 'bg-rose-950/40 hover:bg-rose-900/60 border-rose-800/60 text-rose-200'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">🎨</span>
+                    <div>
+                      <div className="font-bold text-xs">Playground (Blank Canvas)</div>
+                      <div className="text-[10px] opacity-80 font-mono">Build any circuit & export/share JSON</div>
+                    </div>
+                  </div>
+                  {activeBenchmarkId === 'playground' && <Check className="w-3.5 h-3.5 text-white" />}
+                </button>
+
+                <div className="grid grid-cols-2 gap-1.5 max-h-64 overflow-y-auto pr-1">
                   {COMBINATIONAL_CIRCUITS.map((item) => {
                     const isSelected = activeBenchmarkId === item.id;
                     return (

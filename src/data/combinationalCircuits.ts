@@ -7,12 +7,23 @@
 
 import { CircuitProject } from '../types/circuit';
 import { createComponentPins } from '../engine/definitions';
+import { ADVANCED_CIRCUITS } from './advancedCircuits';
+
+export type BenchmarkCategory =
+  | 'Simple Gates'
+  | 'Universal Gates'
+  | 'Arithmetic'
+  | 'Data Routing'
+  | 'Multiplexers'
+  | 'Decoders'
+  | 'Sequential & Latches'
+  | 'Counters & Displays';
 
 export interface CombinationalCircuitBenchmark {
   id: string;
   name: string;
   shortLabel: string;
-  category: 'Simple Gates' | 'Universal Gates' | 'Arithmetic' | 'Data Routing';
+  category: BenchmarkCategory;
   jsonFileName: string;
   primaryEquation: string; // e.g. "Y = A · B"
   booleanAlgebra: string;  // e.g. "Y = A ∧ B"
@@ -22,7 +33,7 @@ export interface CombinationalCircuitBenchmark {
   project: CircuitProject;
 }
 
-export const COMBINATIONAL_CIRCUITS: CombinationalCircuitBenchmark[] = [
+const BASE_COMBINATIONAL_CIRCUITS: CombinationalCircuitBenchmark[] = [
   // 1. AND Gate
   {
     id: 'and-gate',
@@ -744,3 +755,9 @@ export const COMBINATIONAL_CIRCUITS: CombinationalCircuitBenchmark[] = [
     },
   },
 ];
+
+export const COMBINATIONAL_CIRCUITS: CombinationalCircuitBenchmark[] = [
+  ...BASE_COMBINATIONAL_CIRCUITS,
+  ...ADVANCED_CIRCUITS,
+];
+

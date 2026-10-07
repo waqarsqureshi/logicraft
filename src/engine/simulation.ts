@@ -146,6 +146,106 @@ export function evaluateComponent(
       return { outputs: ['X', 'X'] };
     }
 
+    case 'BCD_DECODER': {
+      const [b0, b1, b2, b3] = inputs;
+      const v0 = b0 === 1 ? 1 : 0;
+      const v1 = b1 === 1 ? 2 : 0;
+      const v2 = b2 === 1 ? 4 : 0;
+      const v3 = b3 === 1 ? 8 : 0;
+      const num = v3 + v2 + v1 + v0;
+      const tens = Math.floor(num / 10);
+      const units = num % 10;
+      return {
+        outputs: [
+          (tens & 1) as LogicValue,
+          (units & 1) as LogicValue,
+          ((units >> 1) & 1) as LogicValue,
+          ((units >> 2) & 1) as LogicValue,
+          ((units >> 3) & 1) as LogicValue,
+        ],
+      };
+    }
+
+    case 'MUX_4TO1': {
+      const [i0, i1, i2, i3, s0, s1] = inputs;
+      if (s0 === 'X' || s0 === 'Z' || s1 === 'X' || s1 === 'Z') {
+        return { outputs: ['X'] };
+      }
+      const sel = (s1 === 1 ? 2 : 0) + (s0 === 1 ? 1 : 0);
+      const chosen = [i0, i1, i2, i3][sel] ?? 'X';
+      return { outputs: [chosen as LogicValue] };
+    }
+
+    case 'MUX_8TO1': {
+      const [i0, i1, i2, i3, i4, i5, i6, i7, s0, s1, s2] = inputs;
+      if (s0 === 'X' || s0 === 'Z' || s1 === 'X' || s1 === 'Z' || s2 === 'X' || s2 === 'Z') {
+        return { outputs: ['X'] };
+      }
+      const sel = (s2 === 1 ? 4 : 0) + (s1 === 1 ? 2 : 0) + (s0 === 1 ? 1 : 0);
+      const chosen = [i0, i1, i2, i3, i4, i5, i6, i7][sel] ?? 'X';
+      return { outputs: [chosen as LogicValue] };
+    }
+
+    case 'MUX_16TO1': {
+      const s0 = inputs[16];
+      const s1 = inputs[17];
+      const s2 = inputs[18];
+      const s3 = inputs[19];
+      if (s0 === 'X' || s0 === 'Z' || s1 === 'X' || s1 === 'Z' || s2 === 'X' || s2 === 'Z' || s3 === 'X' || s3 === 'Z') {
+        return { outputs: ['X'] };
+      }
+      const sel = (s3 === 1 ? 8 : 0) + (s2 === 1 ? 4 : 0) + (s1 === 1 ? 2 : 0) + (s0 === 1 ? 1 : 0);
+      const chosen = inputs[sel] ?? 'X';
+      return { outputs: [chosen as LogicValue] };
+    }
+
+    case 'DECODER_2TO4': {
+      const [a0, a1, en] = inputs;
+      if (en !== 1) {
+        return { outputs: [0, 0, 0, 0] };
+      }
+      if (a0 === 'X' || a0 === 'Z' || a1 === 'X' || a1 === 'Z') {
+        return { outputs: ['X', 'X', 'X', 'X'] };
+      }
+      const sel = (a1 === 1 ? 2 : 0) + (a0 === 1 ? 1 : 0);
+      return {
+        outputs: [
+          (sel === 0 ? 1 : 0) as LogicValue,
+          (sel === 1 ? 1 : 0) as LogicValue,
+          (sel === 2 ? 1 : 0) as LogicValue,
+          (sel === 3 ? 1 : 0) as LogicValue,
+        ],
+      };
+    }
+
+    case 'DECODER_3TO8': {
+      const [a0, a1, a2, en] = inputs;
+      if (en !== 1) {
+        return { outputs: [0, 0, 0, 0, 0, 0, 0, 0] };
+      }
+      if (a0 === 'X' || a0 === 'Z' || a1 === 'X' || a1 === 'Z' || a2 === 'X' || a2 === 'Z') {
+        return { outputs: ['X', 'X', 'X', 'X', 'X', 'X', 'X', 'X'] };
+      }
+      const sel = (a2 === 1 ? 4 : 0) + (a1 === 1 ? 2 : 0) + (a0 === 1 ? 1 : 0);
+      return {
+        outputs: [0, 1, 2, 3, 4, 5, 6, 7].map((i) => (sel === i ? 1 : 0)) as LogicValue[],
+      };
+    }
+
+    case 'DECODER_4TO16': {
+      const [a0, a1, a2, a3, en] = inputs;
+      if (en !== 1) {
+        return { outputs: Array(16).fill(0) as LogicValue[] };
+      }
+      if (a0 === 'X' || a0 === 'Z' || a1 === 'X' || a1 === 'Z' || a2 === 'X' || a2 === 'Z' || a3 === 'X' || a3 === 'Z') {
+        return { outputs: Array(16).fill('X') as LogicValue[] };
+      }
+      const sel = (a3 === 1 ? 8 : 0) + (a2 === 1 ? 4 : 0) + (a1 === 1 ? 2 : 0) + (a0 === 1 ? 1 : 0);
+      return {
+        outputs: Array.from({ length: 16 }, (_, i) => (sel === i ? 1 : 0)) as LogicValue[],
+      };
+    }
+
     case 'SR_LATCH': {
       const [s, r] = inputs;
       let q = compState.internalQ ?? 0;
@@ -163,6 +263,38 @@ export function evaluateComponent(
         qbar = 1;
       }
       // if 0, 0: hold state
+      return {
+        outputs: [q as LogicValue, qbar as LogicValue],
+        nextState: { ...compState, internalQ: q, internalQbar: qbar },
+      };
+    }
+
+    case 'D_LATCH': {
+      const [d, en] = inputs;
+      let q = compState.internalQ ?? 0;
+      if (en === 1) {
+        q = d === 1 ? 1 : d === 0 ? 0 : 'X';
+      }
+      const qbar = q === 'X' ? 'X' : q === 1 ? 0 : 1;
+      return {
+        outputs: [q as LogicValue, qbar as LogicValue],
+        nextState: { ...compState, internalQ: q, internalQbar: qbar },
+      };
+    }
+
+    case 'JK_LATCH': {
+      const [j, en, k] = inputs;
+      let q = compState.internalQ ?? 0;
+      if (en === 1) {
+        if (j === 0 && k === 1) {
+          q = 0;
+        } else if (j === 1 && k === 0) {
+          q = 1;
+        } else if (j === 1 && k === 1) {
+          q = q === 1 ? 0 : 1;
+        }
+      }
+      const qbar = q === 'X' ? 'X' : q === 1 ? 0 : 1;
       return {
         outputs: [q as LogicValue, qbar as LogicValue],
         nextState: { ...compState, internalQ: q, internalQbar: qbar },

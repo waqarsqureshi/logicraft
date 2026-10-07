@@ -37,14 +37,23 @@ export type GateType =
   | 'HEX_DISPLAY'
   | 'BUZZER'
   | 'TIMING_ANALYZER'
-  // Arithmetic
+  // Arithmetic & Decoders
   | 'HALF_ADDER'
   | 'FULL_ADDER'
-  // Multiplexers
+  | 'BCD_DECODER'
+  // Multiplexers & Decoders
   | 'MUX_2TO1'
+  | 'MUX_4TO1'
+  | 'MUX_8TO1'
+  | 'MUX_16TO1'
   | 'DEMUX_1TO2'
+  | 'DECODER_2TO4'
+  | 'DECODER_3TO8'
+  | 'DECODER_4TO16'
   // Sequential
   | 'SR_LATCH'
+  | 'D_LATCH'
+  | 'JK_LATCH'
   | 'D_FLIP_FLOP'
   | 'JK_FLIP_FLOP'
   | 'T_FLIP_FLOP'

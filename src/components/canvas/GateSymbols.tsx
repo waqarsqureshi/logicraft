@@ -5,6 +5,7 @@
 
 import React from 'react';
 import { CircuitComponent } from '../../types/circuit';
+import { COMPONENT_DEFINITIONS } from '../../engine/definitions';
 
 interface GateSymbolProps {
   component: CircuitComponent;
@@ -155,15 +156,17 @@ export const GateSymbols: React.FC<GateSymbolProps> = ({
           </g>
         );
 
-      case 'CONST_HIGH':
+      case 'CONST_HIGH': {
+        const active = isSimRunning;
         return (
           <g>
-            <rect x="5" y="5" width="40" height="30" rx="6" fill="#1e293b" stroke="#22c55e" strokeWidth="2" />
-            <text x="25" y="24" fill="#22c55e" fontSize="14" fontWeight="bold" textAnchor="middle">
+            <rect x="5" y="5" width="40" height="30" rx="6" fill="#1e293b" stroke={active ? '#22c55e' : '#64748b'} strokeWidth="2" />
+            <text x="25" y="24" fill={active ? '#22c55e' : '#94a3b8'} fontSize="14" fontWeight="bold" textAnchor="middle">
               1
             </text>
           </g>
         );
+      }
 
       case 'CONST_LOW':
         return (
@@ -375,7 +378,7 @@ export const GateSymbols: React.FC<GateSymbolProps> = ({
 
       case 'SEVEN_SEGMENT': {
         // inputs: a, b, c, d, e, f, g
-        const vals = inputs.map((p) => p.value === 1);
+        const vals = inputs.map((p) => isSimRunning && p.value === 1);
         const [a, b, c, d, e, f, g] = vals;
         const segOn = '#ef4444';
         const segOff = '#2d1515';
@@ -404,28 +407,30 @@ export const GateSymbols: React.FC<GateSymbolProps> = ({
       case 'HEX_DISPLAY': {
         // inputs: D3, D2, D1, D0
         let num = 0;
-        let valid = true;
-        inputs.forEach((p, idx) => {
-          if (p.value === 'X' || p.value === 'Z') valid = false;
-          else if (p.value === 1) {
-            num |= 1 << (3 - idx);
-          }
-        });
-        const hexChar = valid ? num.toString(16).toUpperCase() : '?';
+        let valid = isSimRunning;
+        if (isSimRunning) {
+          inputs.forEach((p, idx) => {
+            if (p.value === 'X' || p.value === 'Z') valid = false;
+            else if (p.value === 1) {
+              num |= 1 << (3 - idx);
+            }
+          });
+        }
+        const hexChar = !isSimRunning ? '-' : valid ? num.toString(16).toUpperCase() : '?';
 
         return (
           <g>
-            <rect x="5" y="5" width="80" height="90" rx="8" fill="#020617" stroke="#38bdf8" strokeWidth="2" />
+            <rect x="5" y="5" width="80" height="90" rx="8" fill="#020617" stroke={isSimRunning && valid ? '#38bdf8' : '#334155'} strokeWidth="2" />
             <text
               x="45"
               y="62"
-              fill={valid ? '#38bdf8' : '#f43f5e'}
+              fill={!isSimRunning ? '#475569' : valid ? '#38bdf8' : '#f43f5e'}
               fontSize="48"
               fontWeight="bold"
               fontFamily="monospace"
               textAnchor="middle"
               style={{
-                filter: valid ? 'drop-shadow(0 0 8px rgba(56, 189, 248, 0.6))' : undefined,
+                filter: isSimRunning && valid ? 'drop-shadow(0 0 8px rgba(56, 189, 248, 0.6))' : undefined,
               }}
             >
               {hexChar}
@@ -438,7 +443,7 @@ export const GateSymbols: React.FC<GateSymbolProps> = ({
       }
 
       case 'BUZZER': {
-        const active = inputs[0]?.value === 1;
+        const active = isSimRunning && inputs[0]?.value === 1;
         return (
           <g>
             <rect x="5" y="5" width="50" height="40" rx="8" fill="#1e293b" stroke={active ? '#f59e0b' : '#64748b'} strokeWidth="2" />
@@ -461,7 +466,7 @@ export const GateSymbols: React.FC<GateSymbolProps> = ({
       }
 
       case 'NMOS_TRANSISTOR': {
-        const isOn = inputs[0]?.value === 1; // Gate is pin 0
+        const isOn = isSimRunning && inputs[0]?.value === 1; // Gate is pin 0
         const isConducting = isOn;
         return (
           <g>
@@ -478,7 +483,7 @@ export const GateSymbols: React.FC<GateSymbolProps> = ({
             {/* Gate vertical bar */}
             <line x1="24" y1="18" x2="24" y2="52" stroke="#94a3b8" strokeWidth="2.5" />
             {/* Gate lead from pin 0 (y=23.3) */}
-            <line x1="5" y1="23" x2="24" y2="23" stroke={inputs[0]?.value === 1 ? '#22c55e' : '#94a3b8'} strokeWidth="2" />
+            <line x1="5" y1="23" x2="24" y2="23" stroke={isSimRunning && inputs[0]?.value === 1 ? '#22c55e' : '#94a3b8'} strokeWidth="2" />
             {/* Channel bar */}
             <line
               x1="34"
@@ -490,9 +495,9 @@ export const GateSymbols: React.FC<GateSymbolProps> = ({
               strokeDasharray={isConducting ? undefined : '4 3'}
             />
             {/* Drain connection from pin 1 (y=46.6) */}
-            <line x1="5" y1="46" x2="34" y2="46" stroke={inputs[1]?.value === 1 ? '#22c55e' : '#94a3b8'} strokeWidth="2" />
+            <line x1="5" y1="46" x2="34" y2="46" stroke={isSimRunning && inputs[1]?.value === 1 ? '#22c55e' : '#94a3b8'} strokeWidth="2" />
             {/* Source output lead to output pin (x=80, y=35) */}
-            <line x1="34" y1="35" x2="75" y2="35" stroke={outputs[0]?.value === 1 ? '#22c55e' : '#64748b'} strokeWidth="2.5" />
+            <line x1="34" y1="35" x2="75" y2="35" stroke={isSimRunning && outputs[0]?.value === 1 ? '#22c55e' : '#64748b'} strokeWidth="2.5" />
             <text x="50" y="24" fill={isConducting ? '#4ade80' : '#94a3b8'} fontSize="9" fontWeight="bold" textAnchor="middle">
               NMOS
             </text>
@@ -504,7 +509,7 @@ export const GateSymbols: React.FC<GateSymbolProps> = ({
       }
 
       case 'PMOS_TRANSISTOR': {
-        const isOn = inputs[0]?.value === 0; // PMOS turns ON when Gate is 0V
+        const isOn = isSimRunning && inputs[0]?.value === 0; // PMOS turns ON when Gate is 0V
         const isConducting = isOn;
         return (
           <g>
@@ -523,7 +528,7 @@ export const GateSymbols: React.FC<GateSymbolProps> = ({
             {/* Inversion bubble at Gate */}
             <circle cx="20" cy="23" r="3.5" fill="#0f172a" stroke="#94a3b8" strokeWidth="1.5" />
             {/* Gate lead */}
-            <line x1="5" y1="23" x2="16" y2="23" stroke={inputs[0]?.value === 1 ? '#22c55e' : '#94a3b8'} strokeWidth="2" />
+            <line x1="5" y1="23" x2="16" y2="23" stroke={isSimRunning && inputs[0]?.value === 1 ? '#22c55e' : '#94a3b8'} strokeWidth="2" />
             {/* Channel bar */}
             <line
               x1="38"
@@ -535,9 +540,9 @@ export const GateSymbols: React.FC<GateSymbolProps> = ({
               strokeDasharray={isConducting ? undefined : '4 3'}
             />
             {/* Source connection */}
-            <line x1="5" y1="46" x2="38" y2="46" stroke={inputs[1]?.value === 1 ? '#22c55e' : '#94a3b8'} strokeWidth="2" />
+            <line x1="5" y1="46" x2="38" y2="46" stroke={isSimRunning && inputs[1]?.value === 1 ? '#22c55e' : '#94a3b8'} strokeWidth="2" />
             {/* Drain output lead */}
-            <line x1="38" y1="35" x2="75" y2="35" stroke={outputs[0]?.value === 1 ? '#22c55e' : '#64748b'} strokeWidth="2.5" />
+            <line x1="38" y1="35" x2="75" y2="35" stroke={isSimRunning && outputs[0]?.value === 1 ? '#22c55e' : '#64748b'} strokeWidth="2.5" />
             <text x="54" y="24" fill={isConducting ? '#4ade80' : '#94a3b8'} fontSize="9" fontWeight="bold" textAnchor="middle">
               PMOS
             </text>
@@ -596,7 +601,7 @@ export const GateSymbols: React.FC<GateSymbolProps> = ({
 
             {/* Chassis Header Bar */}
             <rect x="4" y="4" width={width - 8} height="20" rx="8" fill="#0f172a" />
-            <circle cx="16" cy="14" r="3.5" fill={simTick > 0 ? '#22c55e' : '#f59e0b'} className={simTick > 0 ? 'animate-pulse' : ''} />
+            <circle cx="16" cy="14" r="3.5" fill={isSimRunning && simTick > 0 ? '#22c55e' : '#f59e0b'} className={isSimRunning && simTick > 0 ? 'animate-pulse' : ''} />
             <text x="26" y="17" fill="#e2e8f0" fontSize="9" fontWeight="bold" fontFamily="monospace">
               TIMING ANALYZER / OSCILLOSCOPE
             </text>
@@ -771,7 +776,10 @@ export const GateSymbols: React.FC<GateSymbolProps> = ({
 
       // Default IC chip box for complex arithmetic, sequential, and multiplexers
       default: {
-        const { width = 100, height = 80 } = component as any;
+        const def = COMPONENT_DEFINITIONS[component.type];
+        const width = def?.width || 100;
+        const height = def?.height || 80;
+        const displayName = def?.name || component.label || component.type;
         return (
           <g>
             <rect
@@ -790,12 +798,12 @@ export const GateSymbols: React.FC<GateSymbolProps> = ({
               x={width / 2}
               y={height / 2 + 4}
               fill="#cbd5e1"
-              fontSize="11"
+              fontSize={width > 110 ? "10" : "11"}
               fontWeight="600"
               textAnchor="middle"
               pointerEvents="none"
             >
-              {component.label || component.type}
+              {component.label || displayName}
             </text>
           </g>
         );
