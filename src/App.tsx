@@ -157,7 +157,7 @@ export default function App() {
   }, [project]);
 
   // Insert component from palette
-  const handleInsertComponent = (type: GateType) => {
+  const handleInsertComponent = (type: GateType, defaultState?: Record<string, any>) => {
     const def = COMPONENT_DEFINITIONS[type];
     const newId = `c_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
     const { inputs, outputs } = createComponentPins(type, def.width, def.height, newId);
@@ -172,6 +172,7 @@ export default function App() {
       rotation: 0,
       inputs,
       outputs,
+      state: defaultState ? { ...defaultState } : undefined,
     };
 
     handleUpdateProject({

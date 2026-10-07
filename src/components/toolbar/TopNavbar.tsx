@@ -160,7 +160,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
           if (b) onSelectBenchmark(b);
         }
       }}
-      className={`text-xs font-semibold px-2 py-1.5 rounded-xl outline-none cursor-pointer border transition-colors w-full max-w-[140px] sm:max-w-[170px] md:max-w-[130px] lg:max-w-[210px] truncate ${
+      className={`text-[11px] sm:text-xs font-semibold px-1.5 sm:px-2 py-1 rounded-lg outline-none cursor-pointer border transition-colors w-full max-w-[85px] sm:max-w-[95px] md:max-w-[100px] lg:max-w-[115px] xl:max-w-[130px] truncate ${
         activeBenchmarkId === 'playground'
           ? 'bg-[#840038] text-white border-rose-900 focus:ring-1 focus:ring-rose-400'
           : isLight
@@ -170,13 +170,13 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
       title="Sample Circuits & Student Playground (Select to load or design freely)"
     >
       <option value="" disabled>
-        ⚡ Sample Circuit...
+        ⚡ Circuit...
       </option>
       <option
         value="playground"
         className={isLight ? 'text-[#840038] font-bold bg-rose-50' : 'text-rose-300 font-bold bg-slate-900'}
       >
-        🎨 Playground (Blank Canvas)
+        🎨 Playground (Blank)
       </option>
       <optgroup label="Basic & Universal Logic Gates" className="font-bold text-slate-400">
         {COMBINATIONAL_CIRCUITS.filter(
@@ -398,13 +398,13 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
       {/* ========================================================================= */}
       {/* 2. TABLET & DESKTOP NAVIGATION BAR (>= 768px: iPad, Laptops, Desktops)    */}
       {/* ========================================================================= */}
-      <div className="hidden md:flex items-center justify-between h-14 px-2.5 md:px-4 lg:px-5 gap-1.5 sm:gap-2 w-full">
-        {/* Left: Brand Logo & Project Name */}
-        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-          {/* Palette toggle button: Explicitly labeled "Side Tab" for desktop & tablet */}
+      <div className="hidden md:flex items-center justify-between h-13 px-2 sm:px-2.5 lg:px-3 pr-3 sm:pr-4 lg:pr-5 gap-1 sm:gap-1.5 w-full max-w-full overflow-visible">
+        {/* Left: Brand Logo & Project Name (Squeezed for optimal screen fit) */}
+        <div className="flex items-center gap-1 sm:gap-1.5 shrink min-w-0">
+          {/* Palette toggle button: Squeezed Side Tab button */}
           <button
             onClick={onTogglePalette}
-            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border transition-all cursor-pointer ${
+            className={`flex items-center gap-1 px-1.5 sm:px-2 py-1 rounded-lg border transition-all cursor-pointer shrink-0 ${
               isPaletteOpen
                 ? 'bg-[#840038]/15 border-[#840038]/40 text-[#840038] dark:text-rose-300 shadow-xs'
                 : isLight
@@ -413,17 +413,18 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
             }`}
             title={isPaletteOpen ? 'Hide Component Library Side Tab' : 'Show Component Library Side Tab'}
           >
-            <Menu className="w-4 h-4" />
-            <span className="text-xs font-semibold">Side Tab</span>
+            <Menu className="w-3.5 h-3.5 shrink-0" />
+            <span className="text-xs font-semibold hidden xl:inline">Side Tab</span>
+            <span className="text-xs font-semibold xl:hidden">Side</span>
           </button>
 
-          {/* Official University of Galway Brand Logo: Compact on tablet, Full landscape on desktop */}
+          {/* Official University of Galway Brand Logo: Squeezed compact badge to save space */}
           <div className="flex items-center shrink-0">
-            <div className="block lg:hidden">
+            <div className="block min-[1800px]:hidden">
               <GalwayLogo variant="compact" theme={theme} size="sm" />
             </div>
-            <div className="hidden lg:block">
-              <GalwayLogo variant="landscape" theme={theme} size="md" />
+            <div className="hidden min-[1800px]:block">
+              <GalwayLogo variant="landscape" theme={theme} size="sm" />
             </div>
           </div>
 
@@ -432,7 +433,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
             type="text"
             value={projectName}
             onChange={(e) => onChangeProjectName(e.target.value)}
-            className={`text-xs font-medium px-1.5 py-1 rounded-lg border outline-none max-w-[65px] md:max-w-[80px] lg:max-w-[130px] truncate transition-colors ${
+            className={`text-xs font-medium px-1.5 py-0.5 rounded-lg border outline-none max-w-[50px] md:max-w-[65px] lg:max-w-[80px] xl:max-w-[95px] truncate transition-colors ${
               isLight
                 ? 'text-slate-700 bg-transparent hover:bg-slate-100 focus:bg-white focus:text-slate-900 border-transparent focus:border-[#840038]/40'
                 : 'text-slate-300 bg-transparent hover:bg-slate-800/60 focus:bg-slate-950 focus:text-white border-transparent focus:border-[#840038]/60'
@@ -443,14 +444,14 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
 
         {/* Center: Simulation Controls & Sample Circuits ("Running Tab") */}
         <div
-          className={`flex items-center gap-1.5 p-1 rounded-2xl shadow-inner border shrink-0 ${
+          className={`flex items-center gap-0.5 sm:gap-1 p-0.5 sm:p-1 rounded-xl shadow-inner border shrink min-w-0 ${
             isLight ? 'bg-slate-100 border-slate-200' : 'bg-slate-950/80 border-slate-800'
           }`}
         >
           {/* Play / Pause Toggle */}
           <button
             onClick={onToggleRun}
-            className={`flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+            className={`flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
               simState.running
                 ? 'bg-emerald-600 text-white shadow-md'
                 : isLight
@@ -462,7 +463,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
             {simState.running ? (
               <>
                 <Pause className="w-3.5 h-3.5 fill-current" />
-                <span>Running</span>
+                <span className="hidden sm:inline">Running</span>
               </>
             ) : (
               <>
@@ -475,87 +476,90 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
           {/* Single Step Pulse */}
           <button
             onClick={onSingleStep}
-            className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+            className={`p-1 rounded-lg transition-colors cursor-pointer ${
               isLight
                 ? 'text-slate-500 hover:text-slate-900 hover:bg-slate-200/70'
                 : 'text-slate-400 hover:text-white hover:bg-slate-800'
             }`}
             title="Single Step Clock Pulse"
           >
-            <SkipForward className="w-4 h-4" />
+            <SkipForward className="w-3.5 h-3.5" />
           </button>
 
           {/* Clock Frequency Selector */}
           <select
             value={simState.frequencyHz}
             onChange={(e) => onChangeFrequency(Number(e.target.value))}
-            className={`bg-transparent text-xs font-mono px-1.5 py-1 rounded outline-none cursor-pointer ${
+            className={`bg-transparent text-xs font-mono px-0.5 sm:px-1 py-0.5 rounded outline-none cursor-pointer ${
               isLight ? 'text-slate-700 hover:text-slate-900' : 'text-slate-300 hover:text-white'
             }`}
             title="Clock Frequency"
           >
-            <option value="0.5" className="bg-slate-900 text-white">0.5 Hz</option>
-            <option value="1" className="bg-slate-900 text-white">1 Hz</option>
-            <option value="2" className="bg-slate-900 text-white">2 Hz</option>
-            <option value="5" className="bg-slate-900 text-white">5 Hz</option>
-            <option value="10" className="bg-slate-900 text-white">10 Hz</option>
+            <option value="0.5" className="bg-slate-900 text-white">0.5Hz</option>
+            <option value="1" className="bg-slate-900 text-white">1Hz</option>
+            <option value="2" className="bg-slate-900 text-white">2Hz</option>
+            <option value="5" className="bg-slate-900 text-white">5Hz</option>
+            <option value="10" className="bg-slate-900 text-white">10Hz</option>
           </select>
 
           {/* Divider */}
-          <div className={`h-4 w-[1px] ${isLight ? 'bg-slate-300' : 'bg-slate-700'}`} />
+          <div className={`h-3.5 w-[1px] ${isLight ? 'bg-slate-300' : 'bg-slate-700'}`} />
 
           {/* Combinational Sample Circuits Dropdown in Running Tab */}
-          <div className="flex items-center">
+          <div className="flex items-center min-w-0">
             {sampleCircuitSelect}
           </div>
         </div>
 
-        {/* Right: Analytical Tools & Action Buttons */}
-        <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
-          {/* Auto-Pulldown Toggle */}
-          <button
-            onClick={onToggleAutoPulldown}
-            className={`hidden 2xl:flex items-center gap-1.5 px-2 py-1 rounded-xl text-xs transition-colors border cursor-pointer ${
-              autoPulldown
-                ? 'bg-blue-950/70 border-blue-500/50 text-blue-300'
-                : isLight
-                ? 'bg-slate-100 border-slate-200 text-slate-500 hover:text-slate-800'
-                : 'bg-slate-800/40 border-slate-700/60 text-slate-400 hover:text-slate-200'
-            }`}
-            title={
-              autoPulldown
-                ? 'Auto-Pulldown ON: Unconnected pins default to 0V (GND)'
-                : 'Auto-Pulldown OFF (Strict): Unconnected pins float at high impedance (Z)'
-            }
-          >
-            <span className={`w-2 h-2 rounded-full ${autoPulldown ? 'bg-blue-400' : 'bg-slate-400'}`} />
-            <span>{autoPulldown ? 'Auto-0V' : 'Strict (Z)'}</span>
-          </button>
+        {/* Right: Analytical Tools & Action Buttons (Always securely bounded on PC Chrome) */}
+        <div className="flex items-center gap-1 sm:gap-1.5 shrink-0 pr-0.5 sm:pr-1">
+          {/* Ultra-wide shortcuts (only on >= 1800px monitors) */}
+          <div className="hidden min-[1800px]:flex items-center gap-1">
+            {/* Auto-Pulldown Toggle */}
+            <button
+              onClick={onToggleAutoPulldown}
+              className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs transition-colors border cursor-pointer ${
+                autoPulldown
+                  ? 'bg-blue-950/70 border-blue-500/50 text-blue-300'
+                  : isLight
+                  ? 'bg-slate-100 border-slate-200 text-slate-500 hover:text-slate-800'
+                  : 'bg-slate-800/40 border-slate-700/60 text-slate-400 hover:text-slate-200'
+              }`}
+              title={
+                autoPulldown
+                  ? 'Auto-Pulldown ON: Unconnected pins default to 0V (GND)'
+                  : 'Auto-Pulldown OFF (Strict): Unconnected pins float at high impedance (Z)'
+              }
+            >
+              <span className={`w-2 h-2 rounded-full ${autoPulldown ? 'bg-blue-400' : 'bg-slate-400'}`} />
+              <span>{autoPulldown ? 'Auto-0V' : 'Strict (Z)'}</span>
+            </button>
 
-          {/* Inside the Gate */}
-          <button
-            onClick={onOpenInsideGate}
-            className="hidden lg:flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-bold text-emerald-400 bg-emerald-950/70 hover:bg-emerald-900 border border-emerald-500/40 rounded-xl transition-all shadow-xs cursor-pointer"
-            title="View Inside the Gate (Transistors & Voltages)"
-          >
-            <Zap className="w-4 h-4 text-emerald-400 animate-pulse" />
-            <span className="hidden xl:inline">Inside Gate</span>
-          </button>
+            {/* Inside the Gate */}
+            <button
+              onClick={onOpenInsideGate}
+              className="flex items-center gap-1 px-2 py-1 text-xs font-bold text-emerald-400 bg-emerald-950/70 hover:bg-emerald-900 border border-emerald-500/40 rounded-lg transition-all shadow-xs cursor-pointer"
+              title="View Inside the Gate (Transistors & Voltages)"
+            >
+              <Zap className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
+              <span>Inside Gate</span>
+            </button>
+          </div>
 
           {/* Truth Table Generator */}
           <button
             onClick={onOpenTruthTable}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-xs transition-all cursor-pointer"
+            className="flex items-center gap-1 px-2 py-1 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-xs transition-all cursor-pointer"
             title="Generate Truth Table & Mathematical Boolean Equations"
           >
-            <Table className="w-4 h-4" />
-            <span className="hidden lg:inline">Truth Table</span>
+            <Table className="w-3.5 h-3.5" />
+            <span className="hidden xl:inline">Table</span>
           </button>
 
           {/* Logic Waveforms */}
           <button
             onClick={onOpenTimingDiagram}
-            className={`p-2 rounded-xl transition-colors cursor-pointer ${
+            className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
               isLight
                 ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                 : 'text-slate-300 hover:text-white hover:bg-slate-800'
@@ -565,87 +569,15 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
             <Activity className="w-4 h-4" />
           </button>
 
-          {/* Desktop Full Action Buttons (>= 1280px / xl:) */}
-          <div className="hidden xl:flex items-center gap-1">
-            {/* Guided Tutorials */}
-            <button
-              onClick={onOpenTutorials}
-              className={`p-2 rounded-xl transition-colors cursor-pointer ${
-                isLight
-                  ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                  : 'text-slate-300 hover:text-white hover:bg-slate-800'
-              }`}
-              title="Interactive Tutorials & Labs"
-            >
-              <BookOpen className="w-4 h-4" />
-            </button>
-
-            {/* Templates & Saved */}
-            <button
-              onClick={onOpenProjects}
-              className={`p-2 rounded-xl transition-colors cursor-pointer ${
-                isLight
-                  ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                  : 'text-slate-300 hover:text-white hover:bg-slate-800'
-              }`}
-              title="Projects & Templates Catalog"
-            >
-              <FolderOpen className="w-4 h-4" />
-            </button>
-
-            {/* Share / Export */}
-            <button
-              onClick={onOpenExport}
-              className={`p-2 rounded-xl transition-colors cursor-pointer ${
-                isLight
-                  ? 'text-blue-600 hover:text-blue-700 hover:bg-blue-50'
-                  : 'text-blue-400 hover:text-blue-300 hover:bg-blue-950/40'
-              }`}
-              title="Export / Share Assignment (.json / image)"
-            >
-              <Share2 className="w-4 h-4" />
-            </button>
-
-            {/* Sound toggle */}
-            <button
-              onClick={onToggleMute}
-              className={`p-2 rounded-xl transition-colors cursor-pointer ${
-                isLight
-                  ? 'text-slate-500 hover:text-slate-900 hover:bg-slate-100'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800'
-              }`}
-              title={isMuted ? 'Unmute Audio' : 'Mute Audio'}
-            >
-              {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4 text-emerald-500" />}
-            </button>
-
-            {/* Grid Snap toggle */}
-            <button
-              onClick={onToggleGrid}
-              className={`p-2 rounded-xl transition-colors cursor-pointer ${
-                snapToGrid
-                  ? isLight
-                    ? 'text-blue-600 bg-blue-100'
-                    : 'text-blue-400 bg-blue-950/40'
-                  : isLight
-                  ? 'text-slate-400 hover:text-slate-700'
-                  : 'text-slate-500 hover:text-slate-300'
-              }`}
-              title={snapToGrid ? 'Grid Snapping Active' : 'Grid Snapping Off'}
-            >
-              <Grid className="w-4 h-4" />
-            </button>
-          </div>
-
-          {/* Share/Export button on tablet */}
+          {/* Share / Export */}
           <button
             onClick={onOpenExport}
-            className={`xl:hidden p-2 rounded-xl transition-colors cursor-pointer ${
+            className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
               isLight
                 ? 'text-blue-600 hover:text-blue-700 hover:bg-blue-50'
                 : 'text-blue-400 hover:text-blue-300 hover:bg-blue-950/40'
             }`}
-            title="Export / Share (.json / image)"
+            title="Export & Share Circuit (.json / image)"
           >
             <Share2 className="w-4 h-4" />
           </button>
@@ -653,7 +585,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
           {/* Theme Toggle */}
           <button
             onClick={onToggleTheme}
-            className={`p-2 rounded-xl transition-all cursor-pointer ${
+            className={`p-1.5 rounded-lg transition-all cursor-pointer ${
               isLight
                 ? 'text-amber-600 bg-amber-100 hover:bg-amber-200'
                 : 'text-amber-300 hover:text-white hover:bg-slate-800'
@@ -663,28 +595,29 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
             {isLight ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
           </button>
 
-          {/* Tablet "More" dropdown toggle */}
-          <div className="relative xl:hidden" ref={tabletMoreRef}>
+          {/* Tablet & Desktop "More" dropdown toggle (Always guaranteed visible and fully on-screen) */}
+          <div className="relative" ref={tabletMoreRef}>
             <button
               onClick={() => setIsTabletMoreOpen((prev) => !prev)}
-              className={`p-2 rounded-xl transition-colors cursor-pointer ${
+              className={`p-1.5 rounded-lg border transition-colors cursor-pointer ${
                 isTabletMoreOpen
                   ? isLight
-                    ? 'bg-slate-200 text-slate-900'
-                    : 'bg-slate-800 text-white'
+                    ? 'bg-slate-200 text-slate-900 border-slate-300'
+                    : 'bg-slate-800 text-white border-slate-700'
                   : isLight
-                  ? 'text-slate-600 hover:bg-slate-100'
-                  : 'text-slate-300 hover:bg-slate-800'
+                  ? 'border-slate-200 text-slate-600 hover:bg-slate-100'
+                  : 'border-slate-800 text-slate-300 hover:bg-slate-800'
               }`}
-              title="More Options"
+              title="More Circuit Options & Settings"
+              aria-label="More Options Menu"
             >
               <MoreVertical className="w-4 h-4" />
             </button>
 
-            {/* Tablet More Menu Popover */}
+            {/* Desktop & Tablet More Menu Popover */}
             {isTabletMoreOpen && (
               <div
-                className={`absolute right-0 top-full mt-1.5 w-60 rounded-2xl border shadow-2xl p-1.5 z-50 animate-in fade-in zoom-in-95 duration-150 ${
+                className={`absolute right-0 top-full mt-1.5 w-60 max-w-[calc(100vw-32px)] rounded-2xl border shadow-2xl p-1.5 z-50 animate-in fade-in zoom-in-95 duration-150 ${
                   isLight
                     ? 'bg-white border-slate-200 text-slate-800'
                     : 'bg-slate-900 border-slate-700 text-slate-100'

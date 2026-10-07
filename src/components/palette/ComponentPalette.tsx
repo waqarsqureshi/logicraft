@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 
 interface ComponentPaletteProps {
-  onInsertComponent: (type: GateType) => void;
+  onInsertComponent: (type: GateType, defaultState?: Record<string, any>) => void;
   isOpen: boolean;
   onClose: () => void;
   isMobile: boolean;
@@ -216,6 +216,34 @@ export const ComponentPalette: React.FC<ComponentPaletteProps> = ({
                   theme === 'light' ? 'text-slate-400' : 'text-slate-500'
                 }`}>
                   {comp.truthTableSummary}
+                </div>
+              )}
+
+              {comp.type === 'LED' && (
+                <div className="flex items-center gap-1.5 mt-2 pt-1.5 border-t border-slate-700/30">
+                  <span className={`text-[10px] font-semibold ${theme === 'light' ? 'text-slate-500' : 'text-slate-400'}`}>
+                    Colors:
+                  </span>
+                  {([
+                    { id: 'red', bg: '#ef4444', label: 'Red' },
+                    { id: 'green', bg: '#22c55e', label: 'Green' },
+                    { id: 'blue', bg: '#3b82f6', label: 'Blue' },
+                    { id: 'amber', bg: '#f59e0b', label: 'Amber' },
+                    { id: 'purple', bg: '#a855f7', label: 'Purple' },
+                    { id: 'cyan', bg: '#06b6d4', label: 'Cyan' },
+                  ] as const).map(({ id, bg, label }) => (
+                    <button
+                      key={id}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onInsertComponent('LED', { ledColor: id });
+                        if (isMobile) onClose();
+                      }}
+                      style={{ backgroundColor: bg }}
+                      className="w-3.5 h-3.5 rounded-full hover:scale-125 transition-transform cursor-pointer shadow-xs border border-white/20"
+                      title={`Insert ${label} LED (can also be changed when selected)`}
+                    />
+                  ))}
                 </div>
               )}
             </div>

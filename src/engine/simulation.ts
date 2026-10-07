@@ -250,11 +250,13 @@ export function evaluateComponent(
       const [s, r] = inputs;
       let q = compState.internalQ ?? 0;
       let qbar = compState.internalQbar ?? 1;
+      let isUndefined = false;
 
       if (s === 1 && r === 1) {
-        // Invalid condition
-        q = 0;
-        qbar = 0;
+        // Forbidden / Undefined condition in SR Latch (Metastable race condition)
+        q = 'X';
+        qbar = 'X';
+        isUndefined = true;
       } else if (s === 1 && r === 0) {
         q = 1;
         qbar = 0;
@@ -262,10 +264,10 @@ export function evaluateComponent(
         q = 0;
         qbar = 1;
       }
-      // if 0, 0: hold state
+      // if 0, 0: hold previous valid state
       return {
         outputs: [q as LogicValue, qbar as LogicValue],
-        nextState: { ...compState, internalQ: q, internalQbar: qbar },
+        nextState: { ...compState, internalQ: q, internalQbar: qbar, isUndefined },
       };
     }
 
@@ -598,6 +600,19 @@ export function simulateCircuit(
       message: 'Unstable Feedback Loop or High-Frequency Oscillation detected in circuit.',
     });
   }
+
+  // Check for SR Latch undefined state (S=1, R=1 forbidden inputs)
+  components.forEach((c) => {
+    if (c.type === 'SR_LATCH' && (c.state?.isUndefined || (c.inputs[0]?.value === 1 && c.inputs[1]?.value === 1))) {
+      errors.push({
+        id: `invalid_sr_${c.id}`,
+        type: 'invalid_state',
+        severity: 'warning',
+        message: `SR Latch "${c.label || 'SR Latch'}": Undefined / Forbidden State! When both S=1 and R=1, the state is undefined (causes race conditions / metastability).`,
+        componentId: c.id,
+      });
+    }
+  });
 
   // Check buzzer activation
   components.forEach((c) => {

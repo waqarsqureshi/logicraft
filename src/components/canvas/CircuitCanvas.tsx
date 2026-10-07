@@ -562,6 +562,15 @@ export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
     onSelectComponent(newId);
   }, [selectedComponentId, project, onChangeProject, onSelectComponent]);
 
+  const handleUpdateLedColor = (id: string, color: string) => {
+    onChangeProject({
+      ...project,
+      components: project.components.map((c) =>
+        c.id === id ? { ...c, state: { ...c.state, ledColor: color } } : c
+      ),
+    });
+  };
+
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -872,6 +881,49 @@ export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
                     {preset}
                   </button>
                 ))}
+              </div>
+            )}
+
+            {/* Quick LED Color Switcher */}
+            {selectedComp.type === 'LED' && (
+              <div
+                className={`flex items-center gap-1.5 px-2 py-0.5 border-l ${
+                  theme === 'light' ? 'border-slate-200' : 'border-slate-700/60'
+                }`}
+                title="Change LED Emitting Color"
+              >
+                <span className={`text-[10px] font-bold uppercase tracking-wider ${
+                  theme === 'light' ? 'text-slate-600' : 'text-slate-300'
+                }`}>
+                  Color:
+                </span>
+                {([
+                  { id: 'red', bg: '#ef4444', label: 'Red' },
+                  { id: 'green', bg: '#22c55e', label: 'Green' },
+                  { id: 'blue', bg: '#3b82f6', label: 'Blue' },
+                  { id: 'amber', bg: '#f59e0b', label: 'Amber' },
+                  { id: 'purple', bg: '#a855f7', label: 'Purple' },
+                  { id: 'cyan', bg: '#06b6d4', label: 'Cyan' },
+                ] as const).map(({ id, bg, label }) => {
+                  const isCurrent = (selectedComp.state?.ledColor || 'red') === id;
+                  return (
+                    <button
+                      key={id}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleUpdateLedColor(selectedComp.id, id);
+                      }}
+                      style={{ backgroundColor: bg }}
+                      className={`w-4 h-4 rounded-full transition-all cursor-pointer ${
+                        isCurrent
+                          ? 'ring-2 ring-white ring-offset-1 ring-offset-slate-900 scale-125 shadow-xs'
+                          : 'opacity-70 hover:opacity-100 hover:scale-110'
+                      }`}
+                      title={`Change LED Color to ${label}`}
+                      aria-label={`Change LED Color to ${label}`}
+                    />
+                  );
+                })}
               </div>
             )}
           </div>

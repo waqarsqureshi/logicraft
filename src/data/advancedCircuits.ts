@@ -499,6 +499,40 @@ export const ADVANCED_CIRCUITS: CombinationalCircuitBenchmark[] = [
     },
   },
 
+  // 9b. SR Latch (Standard IC Component with S=1, R=1 Undefined Warning)
+  {
+    id: 'sr-latch-ic',
+    name: 'SR Latch (IC Component with Invalid State Warning)',
+    shortLabel: 'SR Latch (IC)',
+    category: 'Sequential & Latches',
+    jsonFileName: 'sr_latch_ic.json',
+    primaryEquation: 'Q = S + R\'·Q (Warning: S=1 & R=1 is Undefined)',
+    booleanAlgebra: 'Q(t+1) = S + R\'·Q (Condition: S·R = 0)',
+    sopForm: 'Undefined / Forbidden when S=1 and R=1',
+    explanation: 'Interactive SR Latch integrated circuit. Flip Set (S) to store 1; flip Reset (R) to store 0. When both S=1 and R=1, the circuit alerts students with an UNDEFINED warning and real-time advisory notice!',
+    project: {
+      id: 'comb-sr-latch-ic',
+      name: 'SR Latch IC Component Circuit',
+      description: 'SR Latch block demonstrating Set, Reset, Hold, and the S=1 & R=1 undefined/invalid state warning.',
+      version: '1.0.0',
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      components: [
+        { id: 'sw_s', type: 'SWITCH', label: 'Set (S)', x: 100, y: 90, rotation: 0, state: { toggle: false }, ...createComponentPins('SWITCH', 70, 50, 'sw_s') },
+        { id: 'sw_r', type: 'SWITCH', label: 'Reset (R)', x: 100, y: 190, rotation: 0, state: { toggle: false }, ...createComponentPins('SWITCH', 70, 50, 'sw_r') },
+        { id: 'latch_sr', type: 'SR_LATCH', label: 'SR Latch', x: 280, y: 120, rotation: 0, ...createComponentPins('SR_LATCH', 100, 80, 'latch_sr') },
+        { id: 'led_q', type: 'LED', label: 'Q Output', x: 480, y: 110, rotation: 0, state: { ledColor: 'green' }, ...createComponentPins('LED', 50, 50, 'led_q') },
+        { id: 'led_qbar', type: 'LED', label: 'Q̄ Output', x: 480, y: 170, rotation: 0, state: { ledColor: 'red' }, ...createComponentPins('LED', 50, 50, 'led_qbar') },
+      ],
+      wires: [
+        { id: 'ws', fromComponentId: 'sw_s', fromPinId: 'sw_s_out_0', toComponentId: 'latch_sr', toPinId: 'latch_sr_in_0', value: 0, voltage: 0.0 },
+        { id: 'wr', fromComponentId: 'sw_r', fromPinId: 'sw_r_out_0', toComponentId: 'latch_sr', toPinId: 'latch_sr_in_1', value: 0, voltage: 0.0 },
+        { id: 'wq', fromComponentId: 'latch_sr', fromPinId: 'latch_sr_out_0', toComponentId: 'led_q', toPinId: 'led_q_in_0', value: 0, voltage: 0.0 },
+        { id: 'wqb', fromComponentId: 'latch_sr', fromPinId: 'latch_sr_out_1', toComponentId: 'led_qbar', toPinId: 'led_qbar_in_0', value: 1, voltage: 5.0 },
+      ],
+    },
+  },
+
   // 10. Gated D Latch (Gate-Level Implementation)
   {
     id: 'd-latch-gate',

@@ -314,17 +314,26 @@ export const GateSymbols: React.FC<GateSymbolProps> = ({
         const inVal = isSimRunning && inputs[0]?.value === 1;
         const color = state.ledColor || 'red';
         const colorMap: Record<string, { on: string; glow: string; off: string }> = {
-          red: { on: '#ef4444', glow: 'rgba(239, 68, 68, 0.6)', off: '#451a1a' },
-          green: { on: '#22c55e', glow: 'rgba(34, 197, 94, 0.6)', off: '#143321' },
-          blue: { on: '#3b82f6', glow: 'rgba(59, 130, 246, 0.6)', off: '#172554' },
-          amber: { on: '#f59e0b', glow: 'rgba(245, 158, 11, 0.6)', off: '#452a10' },
+          red: { on: '#ef4444', glow: 'rgba(239, 68, 68, 0.65)', off: '#451a1a' },
+          green: { on: '#22c55e', glow: 'rgba(34, 197, 94, 0.65)', off: '#143321' },
+          blue: { on: '#3b82f6', glow: 'rgba(59, 130, 246, 0.65)', off: '#172554' },
+          amber: { on: '#f59e0b', glow: 'rgba(245, 158, 11, 0.65)', off: '#452a10' },
+          purple: { on: '#a855f7', glow: 'rgba(168, 85, 247, 0.65)', off: '#3b1754' },
+          cyan: { on: '#06b6d4', glow: 'rgba(6, 182, 212, 0.65)', off: '#11333d' },
         };
         const c = colorMap[color] || colorMap.red;
 
         return (
           <g>
             {/* Outer bezel */}
-            <circle cx="25" cy="25" r="20" fill="#0f172a" stroke="#475569" strokeWidth="2.5" />
+            <circle
+              cx="25"
+              cy="25"
+              r="20"
+              fill="#0f172a"
+              stroke={selected ? '#38bdf8' : '#475569'}
+              strokeWidth={selected ? '2.5' : '2'}
+            />
             {/* LED lens */}
             <circle
               cx="25"
@@ -342,8 +351,20 @@ export const GateSymbols: React.FC<GateSymbolProps> = ({
               stroke="#ffffff"
               strokeWidth="2"
               strokeLinecap="round"
-              opacity={inVal ? 0.8 : 0.2}
+              opacity={inVal ? 0.8 : 0.25}
             />
+            {/* Color indicator pip when selected */}
+            {selected && (
+              <circle
+                cx="25"
+                cy="25"
+                r="4"
+                fill={c.on}
+                stroke="#ffffff"
+                strokeWidth="1"
+                opacity={0.8}
+              />
+            )}
           </g>
         );
       }
@@ -770,6 +791,68 @@ export const GateSymbols: React.FC<GateSymbolProps> = ({
             <text x={width - 12} y="172" fill="#94a3b8" fontSize="8" fontFamily="monospace" textAnchor="end">
               Tick: {simTick}
             </text>
+          </g>
+        );
+      }
+
+      case 'SR_LATCH': {
+        const isUndefined = component.state?.isUndefined || (inputs[0]?.value === 1 && inputs[1]?.value === 1);
+        const def = COMPONENT_DEFINITIONS.SR_LATCH;
+        const width = def?.width || 100;
+        const height = def?.height || 80;
+        return (
+          <g>
+            <rect
+              x="5"
+              y="5"
+              width={width - 10}
+              height={height - 10}
+              rx="6"
+              fill={isUndefined ? '#1c1308' : '#0f172a'}
+              stroke={isUndefined ? '#f59e0b' : selected ? '#38bdf8' : '#475569'}
+              strokeWidth={isUndefined ? '2.5' : '2'}
+              style={isUndefined ? { filter: 'drop-shadow(0 0 8px rgba(245, 158, 11, 0.45))' } : undefined}
+            />
+            {/* Notch at top */}
+            <circle cx={width / 2} cy="5" r="4" fill="#1e293b" stroke={isUndefined ? '#f59e0b' : '#475569'} strokeWidth="1" />
+            <text
+              x={width / 2}
+              y={isUndefined ? height / 2 - 4 : height / 2 + 4}
+              fill={isUndefined ? '#fbbf24' : '#cbd5e1'}
+              fontSize="11"
+              fontWeight="700"
+              textAnchor="middle"
+              pointerEvents="none"
+            >
+              {component.label || 'SR Latch'}
+            </text>
+
+            {/* Prominent Warning on chip when S=1 and R=1 */}
+            {isUndefined && (
+              <g>
+                <rect
+                  x="12"
+                  y={height / 2 + 4}
+                  width={width - 24}
+                  height="17"
+                  rx="4"
+                  fill="#78350f"
+                  stroke="#f59e0b"
+                  strokeWidth="1"
+                />
+                <text
+                  x={width / 2}
+                  y={height / 2 + 16}
+                  fill="#fef3c7"
+                  fontSize="8.5"
+                  fontWeight="800"
+                  textAnchor="middle"
+                  fontFamily="sans-serif"
+                >
+                  ⚠️ UNDEFINED
+                </text>
+              </g>
+            )}
           </g>
         );
       }

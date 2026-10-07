@@ -102,9 +102,10 @@ export interface CircuitComponent {
     pressed?: boolean; // for BUTTON
     clockFrequencyHz?: number; // for CLOCK (default 1Hz)
     clockTicks?: number;
-    ledColor?: string; // red, green, blue, amber
+    ledColor?: string; // red, green, blue, amber, purple, cyan
     internalQ?: LogicValue; // for latches / flip-flops
     internalQbar?: LogicValue;
+    isUndefined?: boolean; // for SR Latch invalid S=1, R=1 state
     counterValue?: number; // for counter
     lastClock?: LogicValue; // for edge detection
     // Timing Analyzer oscilloscope history
@@ -139,7 +140,7 @@ export interface CircuitProject {
 
 export interface CircuitError {
   id: string;
-  type: 'floating_input' | 'contention' | 'oscillation' | 'high_impedance';
+  type: 'floating_input' | 'contention' | 'oscillation' | 'high_impedance' | 'invalid_state';
   severity: 'warning' | 'error';
   message: string;
   componentId?: string;
