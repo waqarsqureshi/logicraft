@@ -129,7 +129,6 @@ src/
 - **Styling**: Tailwind CSS 4
 - **UI Components**: Lucide React icons
 - **Animations**: Motion
-- **AI Integration**: Google GenAI (for enhanced features)
 
 ## Development
 
@@ -147,7 +146,7 @@ npm run lint     # Run TypeScript type checking
 
 Create a `.env` file for optional configuration:
 ```env
-VITE_API_KEY=your_google_genai_key  # Optional: For AI features
+VITE_API_KEY=your_google_genai_key
 ```
 
 ## Features Roadmap
@@ -176,8 +175,8 @@ LogiCraft is designed for educational purposes and is actively used in computer 
 
 ## Support
 
-For issues, questions, or suggestions, please open an issue on GitHub or contact the development team.
+For issues, questions, or suggestions, please open an issue on GitHub or contact waqar.shahid@gmail.com
 
 ---
 
-**Built with ❤️ for digital logic enthusiasts and educators**
+**Built for CT101 - Computing Systems**
