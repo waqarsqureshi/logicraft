@@ -42,9 +42,27 @@ export function computeWirePath(
   fromX: number,
   fromY: number,
   toX: number,
-  toY: number
+  toY: number,
+  waypoints?: { x: number; y: number }[]
 ): string {
-  // Smooth cubic Bezier routing with horizontal inflection
+  // If user defined explicit waypoints (corners), draw orthogonal square path through them
+  if (waypoints && waypoints.length > 0) {
+    let d = `M ${fromX} ${fromY}`;
+    for (const pt of waypoints) {
+      d += ` L ${pt.x} ${pt.y}`;
+    }
+    d += ` L ${toX} ${toY}`;
+    return d;
+  }
+
+  // Automatic feedback loop routing when wire flows backwards (e.g., Qbar on the right back to D on the left)
+  if (fromX > toX + 15) {
+    const minY = Math.min(fromY, toY);
+    const loopY = minY - 30; // loop neatly above the flip-flop/gate
+    return `M ${fromX} ${fromY} L ${fromX + 20} ${fromY} L ${fromX + 20} ${loopY} L ${toX - 20} ${loopY} L ${toX - 20} ${toY} L ${toX} ${toY}`;
+  }
+
+  // Smooth cubic Bezier routing with horizontal inflection for standard left-to-right flow
   const dx = Math.abs(toX - fromX);
   const offset = Math.max(30, Math.min(dx * 0.5, 120));
 
@@ -110,7 +128,7 @@ export const WireRenderer: React.FC<WireRendererProps> = ({
         const toPos = getPinAbsolutePosition(toComp, wire.toPinId);
         if (!fromPos || !toPos) return null;
 
-        const pathData = computeWirePath(fromPos.x, fromPos.y, toPos.x, toPos.y);
+        const pathData = computeWirePath(fromPos.x, fromPos.y, toPos.x, toPos.y, wire.waypoints);
         const isSelected = selectedWireId === wire.id;
         const strokeColor = getWireStroke(wire.value, isSelected);
         const isHigh = wire.value === 1;
@@ -124,6 +142,7 @@ export const WireRenderer: React.FC<WireRendererProps> = ({
               stroke="transparent"
               strokeWidth="24"
               strokeLinecap="round"
+              strokeLinejoin="round"
               onClick={(e) => {
                 e.stopPropagation();
                 onSelectWire?.(wire.id);
@@ -139,6 +158,7 @@ export const WireRenderer: React.FC<WireRendererProps> = ({
                 strokeWidth="6"
                 strokeOpacity="0.4"
                 strokeLinecap="round"
+                strokeLinejoin="round"
                 filter="url(#wire-glow)"
                 pointerEvents="none"
               />
@@ -152,8 +172,23 @@ export const WireRenderer: React.FC<WireRendererProps> = ({
               strokeWidth={isSelected ? 3.5 : (isHigh && isSimRunning) ? 2.8 : 2}
               strokeDasharray={wire.value === 'Z' ? '6 4' : undefined}
               strokeLinecap="round"
+              strokeLinejoin="round"
               pointerEvents="none"
             />
+
+            {/* Corner waypoint visual indicator dots when wire has custom corners */}
+            {wire.waypoints && wire.waypoints.map((pt, idx) => (
+              <circle
+                key={`wp_${idx}`}
+                cx={pt.x}
+                cy={pt.y}
+                r={isSelected ? 4 : 2.5}
+                fill={isSelected ? '#38bdf8' : strokeColor}
+                stroke={isSelected ? '#ffffff' : 'none'}
+                strokeWidth={1.5}
+                pointerEvents="none"
+              />
+            ))}
 
             {/* Animated electron dots on active high wires: only when running */}
             {isHigh && showAnimations && isSimRunning && (
@@ -164,6 +199,7 @@ export const WireRenderer: React.FC<WireRendererProps> = ({
                 strokeWidth="2.5"
                 strokeDasharray="4 16"
                 strokeLinecap="round"
+                strokeLinejoin="round"
                 className="animate-pulse"
                 pointerEvents="none"
               />

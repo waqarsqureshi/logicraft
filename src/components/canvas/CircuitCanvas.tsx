@@ -56,6 +56,7 @@ interface DraftWire {
   startY: number;
   currentX: number;
   currentY: number;
+  waypoints?: { x: number; y: number }[];
 }
 
 export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
@@ -185,6 +186,14 @@ export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
       }
 
       if (fromCompId && toCompId) {
+        // Correct waypoint ordering: if draft started from output, order is start -> waypoints -> target
+        // If draft started from input, waypoints order needs reversing to keep fromComponent (output) -> toComponent (input)
+        const waypoints = draftWire.waypoints && draftWire.waypoints.length > 0
+          ? draftWire.fromPinType === 'output'
+            ? [...draftWire.waypoints]
+            : [...draftWire.waypoints].reverse()
+          : undefined;
+
         // Create new wire
         const newWire: Wire = {
           id: `w_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
@@ -194,6 +203,7 @@ export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
           toPinId: toPinId,
           value: 0,
           voltage: 0,
+          waypoints,
         };
 
         // Remove any existing wire connected to this specific input pin
@@ -295,14 +305,40 @@ export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
     });
   };
 
-  // Canvas pointer down -> panning or deselect
+  // Canvas pointer down -> add corner waypoint to wire, or panning / deselect
   const handleCanvasPointerDown = (e: React.PointerEvent) => {
     if (isTwoFingerGestureRef.current) return;
 
-    // If drawing wire, cancel wire on empty click
+    // If drawing wire, pressing mouse on canvas adds a square corner waypoint!
     if (draftWire) {
-      setDraftWire(null);
-      return;
+      if (e.button === 0) {
+        // Left click: add a corner waypoint
+        const world = screenToWorld(e.clientX, e.clientY);
+        const cornerX = snapVal(world.x);
+        const cornerY = snapVal(world.y);
+        setDraftWire((prev) => {
+          if (!prev) return null;
+          const currentWaypoints = prev.waypoints ? [...prev.waypoints] : [];
+          // Avoid immediate duplicate points
+          const lastPt = currentWaypoints[currentWaypoints.length - 1];
+          if (!lastPt || Math.abs(lastPt.x - cornerX) > 4 || Math.abs(lastPt.y - cornerY) > 4) {
+            currentWaypoints.push({ x: cornerX, y: cornerY });
+          }
+          return {
+            ...prev,
+            waypoints: currentWaypoints,
+          };
+        });
+        return;
+      } else if (e.button === 2) {
+        // Right click: undo last waypoint, or cancel wire if no waypoints
+        if (draftWire.waypoints && draftWire.waypoints.length > 0) {
+          setDraftWire((prev) => (prev ? { ...prev, waypoints: prev.waypoints?.slice(0, -1) } : null));
+        } else {
+          setDraftWire(null);
+        }
+        return;
+      }
     }
 
     onSelectComponent(null);
@@ -579,7 +615,11 @@ export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
       }
 
       if (e.key === 'Delete' || e.key === 'Backspace') {
-        handleDeleteSelected();
+        if (draftWire && draftWire.waypoints && draftWire.waypoints.length > 0) {
+          setDraftWire((prev) => (prev ? { ...prev, waypoints: prev.waypoints?.slice(0, -1) } : null));
+        } else {
+          handleDeleteSelected();
+        }
       } else if (e.key === 'r' || e.key === 'R') {
         handleRotateSelected();
       } else if (e.key === 'd' || e.key === 'D') {
@@ -588,15 +628,19 @@ export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
           handleDuplicateSelected();
         }
       } else if (e.key === 'Escape') {
-        setDraftWire(null);
-        onSelectComponent(null);
-        onSelectWire(null);
+        if (draftWire && draftWire.waypoints && draftWire.waypoints.length > 0) {
+          setDraftWire((prev) => (prev ? { ...prev, waypoints: prev.waypoints?.slice(0, -1) } : null));
+        } else {
+          setDraftWire(null);
+          onSelectComponent(null);
+          onSelectWire(null);
+        }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleDeleteSelected, handleRotateSelected, handleDuplicateSelected, onSelectComponent, onSelectWire]);
+  }, [handleDeleteSelected, handleRotateSelected, handleDuplicateSelected, onSelectComponent, onSelectWire, draftWire]);
 
   // Selected component details
   const selectedComp = project.components.find((c) => c.id === selectedComponentId);
@@ -614,6 +658,16 @@ export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onWheel={handleWheel}
+      onContextMenu={(e) => {
+        if (draftWire) {
+          e.preventDefault();
+          if (draftWire.waypoints && draftWire.waypoints.length > 0) {
+            setDraftWire((prev) => (prev ? { ...prev, waypoints: prev.waypoints?.slice(0, -1) } : null));
+          } else {
+            setDraftWire(null);
+          }
+        }
+      }}
     >
       {/* Schematic Grid Background */}
       <svg className="absolute inset-0 w-full h-full pointer-events-none">
@@ -652,26 +706,59 @@ export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
             theme={theme}
           />
 
-          {/* 2. Draft Wire being drawn */}
+          {/* 2. Draft Wire being drawn with live square corner waypoints */}
           {draftWire && (
-            <g>
-              <line
-                x1={draftWire.startX}
-                y1={draftWire.startY}
-                x2={draftWire.currentX}
-                y2={draftWire.currentY}
-                stroke="#38bdf8"
-                strokeWidth="2.5"
-                strokeDasharray="6 4"
-                strokeLinecap="round"
-              />
-              <circle
-                cx={draftWire.currentX}
-                cy={draftWire.currentY}
-                r="5"
-                fill="#38bdf8"
-                className="animate-ping"
-              />
+            <g className="draft-wire-layer">
+              {(() => {
+                const waypoints = draftWire.waypoints || [];
+                let d = `M ${draftWire.startX} ${draftWire.startY}`;
+                for (const pt of waypoints) {
+                  d += ` L ${pt.x} ${pt.y}`;
+                }
+                d += ` L ${draftWire.currentX} ${draftWire.currentY}`;
+                return (
+                  <>
+                    <path
+                      d={d}
+                      fill="none"
+                      stroke="#38bdf8"
+                      strokeWidth="2.5"
+                      strokeDasharray="6 4"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    {waypoints.map((pt, i) => (
+                      <g key={`corner_${i}`}>
+                        <circle
+                          cx={pt.x}
+                          cy={pt.y}
+                          r="5"
+                          fill="#0284c7"
+                          stroke="#ffffff"
+                          strokeWidth="2"
+                        />
+                        <text
+                          x={pt.x + 8}
+                          y={pt.y - 7}
+                          fontSize="10"
+                          fill="#38bdf8"
+                          fontWeight="bold"
+                          className="select-none pointer-events-none"
+                        >
+                          C{i + 1}
+                        </text>
+                      </g>
+                    ))}
+                    <circle
+                      cx={draftWire.currentX}
+                      cy={draftWire.currentY}
+                      r="5"
+                      fill="#38bdf8"
+                      className="animate-ping"
+                    />
+                  </>
+                );
+              })()}
             </g>
           )}
 
@@ -1052,9 +1139,9 @@ export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
 
       {/* Wiring Instruction Toast when user is drawing a wire */}
       {draftWire && (
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 px-3 py-1.5 bg-cyan-950/90 text-cyan-200 border border-cyan-500/50 rounded-full shadow-lg text-xs font-medium animate-pulse">
-          <Info className="w-3.5 h-3.5" />
-          <span>Click any component input pin (circle) to complete wire, or Esc to cancel</span>
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 px-4 py-2 bg-slate-900/95 text-cyan-200 border border-cyan-500/60 rounded-full shadow-2xl text-xs font-semibold backdrop-blur-md animate-in fade-in">
+          <Info className="w-4 h-4 text-cyan-400 shrink-0" />
+          <span>Click canvas to place square corner (bend) • Click target pin to connect • Right-click or Esc to undo corner / cancel</span>
         </div>
       )}
     </div>

@@ -305,12 +305,12 @@ export function evaluateComponent(
 
     case 'D_FLIP_FLOP': {
       const [d, clk] = inputs;
-      const lastClock = compState.lastClock ?? 0;
+      const lastClock = compState.lastClock;
       let q = compState.internalQ ?? 0;
       let qbar = compState.internalQbar ?? 1;
 
       // Positive edge triggered (0 -> 1)
-      if (lastClock === 0 && clk === 1) {
+      if (lastClock !== undefined && lastClock === 0 && clk === 1) {
         if (d === 1) {
           q = 1;
           qbar = 0;
@@ -331,10 +331,10 @@ export function evaluateComponent(
 
     case 'JK_FLIP_FLOP': {
       const [j, clk, k] = inputs;
-      const lastClock = compState.lastClock ?? 0;
+      const lastClock = compState.lastClock;
       let q = compState.internalQ ?? 0;
 
-      if (lastClock === 0 && clk === 1) {
+      if (lastClock !== undefined && lastClock === 0 && clk === 1) {
         if (j === 0 && k === 0) {
           // hold
         } else if (j === 0 && k === 1) {
@@ -355,10 +355,10 @@ export function evaluateComponent(
 
     case 'T_FLIP_FLOP': {
       const [t, clk] = inputs;
-      const lastClock = compState.lastClock ?? 0;
+      const lastClock = compState.lastClock;
       let q = compState.internalQ ?? 0;
 
-      if (lastClock === 0 && clk === 1 && t === 1) {
+      if (lastClock !== undefined && lastClock === 0 && clk === 1 && t === 1) {
         q = q === 1 ? 0 : 1;
       }
 
@@ -371,12 +371,12 @@ export function evaluateComponent(
 
     case 'COUNTER_4BIT': {
       const [clk, rst] = inputs;
-      const lastClock = compState.lastClock ?? 0;
+      const lastClock = compState.lastClock;
       let val = compState.counterValue ?? 0;
 
       if (rst === 1) {
         val = 0;
-      } else if (lastClock === 0 && clk === 1) {
+      } else if (lastClock !== undefined && lastClock === 0 && clk === 1) {
         val = (val + 1) & 0xf;
       }
 

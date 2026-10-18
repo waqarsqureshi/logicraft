@@ -4,6 +4,7 @@
 
 import { CircuitProject } from '../types/circuit';
 import { createComponentPins } from '../engine/definitions';
+import { ADVANCED_CIRCUITS } from './advancedCircuits';
 
 export interface CircuitTemplate {
   id: string;
@@ -1129,5 +1130,59 @@ export const CIRCUIT_TEMPLATES: CircuitTemplate[] = [
         { id: 'w_or_out_ch3', fromComponentId: 'or_gate', fromPinId: 'or_gate_out_0', toComponentId: 'or_analyzer', toPinId: 'or_analyzer_in_2', value: 1, voltage: 5.0 },
       ],
     },
+  },
+
+  // 17. 2-Bit Ripple Counter with D Flip-Flops & Qbar Feedback
+  {
+    id: 'template-d-ff-2bit-ripple-counter',
+    name: '2-Bit Ripple Counter (D Flip-Flops & Q̄)',
+    category: 'Sequential',
+    description: 'Asynchronous binary ripple counter with D Flip-Flops, square corner Q̄ feedback, bit LEDs, and hex display.',
+    project: ADVANCED_CIRCUITS.find((c) => c.id === 'd-ff-2bit-ripple-counter')!.project,
+  },
+
+  // 18. 2-Bit Synchronous Counter with D Flip-Flops
+  {
+    id: 'template-d-ff-2bit-sync-counter',
+    name: '2-Bit Synchronous Counter (D Flip-Flops)',
+    category: 'Sequential',
+    description: 'Synchronous counter where all stages share the same clock, using XOR next-state logic and square feedback.',
+    project: ADVANCED_CIRCUITS.find((c) => c.id === 'd-ff-2bit-sync-counter')!.project,
+  },
+
+  // 19. 4-Bit Ripple Counter with D Flip-Flops & Qbar Feedback
+  {
+    id: 'template-d-ff-4bit-ripple-counter',
+    name: '4-Bit Ripple Counter (D Flip-Flops & Q̄)',
+    category: 'Sequential',
+    description: '4-stage binary ripple counter using D flip-flops, counting 0 to 15 (0-F) with individual LEDs and 7-segment display.',
+    project: ADVANCED_CIRCUITS.find((c) => c.id === 'd-ff-4bit-ripple-counter')!.project,
+  },
+
+  // 20. 4-Bit Synchronous Counter with D Flip-Flops
+  {
+    id: 'template-d-ff-4bit-sync-counter',
+    name: '4-Bit Synchronous Counter (D Flip-Flops)',
+    category: 'Sequential',
+    description: 'Synchronous 4-stage binary counter with common clock bus and combinational look-ahead AND/XOR steering logic.',
+    project: ADVANCED_CIRCUITS.find((c) => c.id === 'd-ff-4bit-sync-counter')!.project,
+  },
+
+  // 21. 4-Bit SIPO Shift Register (Serial-In Parallel-Out)
+  {
+    id: 'template-d-ff-4bit-sipo-shift',
+    name: '4-Bit SIPO Shift Register (Serial-In Parallel-Out)',
+    category: 'Sequential',
+    description: 'Sample serial data bits into cascaded D flip-flops and observe converted 4-bit parallel word on LEDs and display.',
+    project: ADVANCED_CIRCUITS.find((c) => c.id === 'd-ff-4bit-sipo-shift')!.project,
+  },
+
+  // 22. 4-Bit PISO Shift Register (Parallel-In Serial-Out)
+  {
+    id: 'template-d-ff-4bit-piso-shift',
+    name: '4-Bit PISO Shift Register (Parallel-In Serial-Out)',
+    category: 'Sequential',
+    description: 'Parallel load 4 bits simultaneously via 2:1 multiplexers and stream out serially on clock pulses.',
+    project: ADVANCED_CIRCUITS.find((c) => c.id === 'd-ff-4bit-piso-shift')!.project,
   },
 ];

@@ -36,6 +36,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
 }) => {
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedJSON, setCopiedJSON] = useState(false);
+  const [copiedLinkedIn, setCopiedLinkedIn] = useState(false);
   const [importText, setImportText] = useState('');
   const [importError, setImportError] = useState<string | null>(null);
 
@@ -48,6 +49,27 @@ export const ExportModal: React.FC<ExportModalProps> = ({
     navigator.clipboard.writeText(url);
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2000);
+  };
+
+  const handleCopyLinkedIn = () => {
+    const postContent = `🚀 Announcing LogiCraft: Zero-Friction Digital Logic Circuit Simulator
+
+Most digital logic simulators have a steep learning curve with cumbersome pick-and-place and cryptic syntax.
+
+Our mission with LogiCraft is not to develop VHDL/FPGA synthesis code, but to teach students how digital logic works for a deep, intuitive understanding of computer architecture and computing systems.
+
+✨ Key Highlights:
+• Zero-friction in-browser schematic canvas (no install required)
+• Orthogonal square-corner wiring (feedback loops from Q̄ to D)
+• 2-Bit & 4-Bit Ripple & Synchronous Counters with D Flip-Flops
+• 4-Bit SIPO & PISO Shift Registers with live probes & displays
+• Transistor-level CMOS views & live timing waveforms
+
+👉 Try it live: https://logicraft.ai.studio
+💻 Available to adopt via GitHub for university & school labs!`;
+    navigator.clipboard.writeText(postContent);
+    setCopiedLinkedIn(true);
+    setTimeout(() => setCopiedLinkedIn(false), 2500);
   };
 
   const handleCopyJSON = () => {
@@ -166,6 +188,34 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                 <Check className="w-5 h-5 text-emerald-400 shrink-0" />
               ) : (
                 <Link className="w-5 h-5 text-slate-500 group-hover:text-blue-400 shrink-0" />
+              )}
+            </button>
+          </div>
+
+          {/* LinkedIn & GitHub Announcement Post Copy */}
+          <div className="p-4 bg-slate-950 border border-slate-800 hover:border-sky-500/40 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div>
+              <span className="text-xs font-semibold text-sky-400 block mb-0.5">
+                LinkedIn & GitHub Adoption Announcement
+              </span>
+              <p className="text-[11px] text-slate-400">
+                Ready-to-publish post highlighting zero-friction teaching, square-corner wiring, sequential circuits, and github adoption.
+              </p>
+            </div>
+            <button
+              onClick={handleCopyLinkedIn}
+              className="px-3.5 py-2 bg-sky-600 hover:bg-sky-500 text-white text-xs font-medium rounded-xl flex items-center gap-1.5 shrink-0 transition-colors shadow-sm"
+            >
+              {copiedLinkedIn ? (
+                <>
+                  <Check className="w-4 h-4 text-white" />
+                  <span>Post Copied!</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="w-4 h-4 text-sky-200" />
+                  <span>Copy LinkedIn Post</span>
+                </>
               )}
             </button>
           </div>

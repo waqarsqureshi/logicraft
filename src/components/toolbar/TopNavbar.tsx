@@ -216,7 +216,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
         ))}
       </optgroup>
       <optgroup label="Sequential Latches & Flip-Flops" className="font-bold text-slate-400">
-        {COMBINATIONAL_CIRCUITS.filter((c) => c.category === 'Sequential & Latches').map((item) => (
+        {COMBINATIONAL_CIRCUITS.filter((c) => c.category === 'Sequential & Latches' && !c.id.includes('shift')).map((item) => (
           <option
             key={item.id}
             value={item.id}
@@ -226,7 +226,18 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
           </option>
         ))}
       </optgroup>
-      <optgroup label="Counters & BCD Displays" className="font-bold text-slate-400">
+      <optgroup label="Shift Registers (SIPO & PISO)" className="font-bold text-slate-400">
+        {COMBINATIONAL_CIRCUITS.filter((c) => c.category === 'Sequential & Latches' && c.id.includes('shift')).map((item) => (
+          <option
+            key={item.id}
+            value={item.id}
+            className={isLight ? 'text-slate-800 bg-white' : 'text-slate-100 bg-slate-900'}
+          >
+            {item.name} ({item.primaryEquation})
+          </option>
+        ))}
+      </optgroup>
+      <optgroup label="Counters & Displays (Ripple & Synchronous)" className="font-bold text-slate-400">
         {COMBINATIONAL_CIRCUITS.filter((c) => c.category === 'Counters & Displays').map((item) => (
           <option
             key={item.id}

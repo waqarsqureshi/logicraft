@@ -124,6 +124,7 @@ export interface Wire {
   toPinId: string;
   value: LogicValue;
   voltage: number;
+  waypoints?: { x: number; y: number }[];
 }
 
 export interface CircuitProject {
