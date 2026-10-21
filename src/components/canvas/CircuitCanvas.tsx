@@ -683,9 +683,9 @@ export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
             <circle
               cx="1"
               cy="1"
-              r={1 * zoom}
-              fill={theme === 'light' ? '#94a3b8' : '#334155'}
-              opacity={theme === 'light' ? 0.75 : 0.6}
+              r={Math.max(0.9, 1.25 * zoom)}
+              fill="#64748b"
+              opacity={theme === 'light' ? 0.35 : 0.75}
             />
           </pattern>
         </defs>

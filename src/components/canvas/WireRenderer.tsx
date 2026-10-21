@@ -86,12 +86,9 @@ export const WireRenderer: React.FC<WireRendererProps> = ({
   const compMap = new Map<string, CircuitComponent>();
   components.forEach((c) => compMap.set(c.id, c));
 
-  const getWireStroke = (val: LogicValue, isSelected: boolean) => {
+  const getWireStroke = (val: LogicValue, isSelected: boolean, isError: boolean) => {
     if (isSelected) return '#0284c7';
-    // If simulation is paused / stopped, display neutral dormant wire
-    if (!isSimRunning) {
-      return theme === 'light' ? '#94a3b8' : '#475569';
-    }
+    if (isError) return '#dc2626';
     switch (val) {
       case 1:
         return '#16a34a'; // High: bright green
@@ -100,7 +97,7 @@ export const WireRenderer: React.FC<WireRendererProps> = ({
       case 'Z':
         return '#d97706'; // Floating: amber
       case 'X':
-        return '#e11d48'; // Error: bright red
+        return '#a855f7'; // Unknown: purple, distinct from simulation errors
       default:
         return theme === 'light' ? '#94a3b8' : '#64748b';
     }
@@ -130,11 +127,20 @@ export const WireRenderer: React.FC<WireRendererProps> = ({
 
         const pathData = computeWirePath(fromPos.x, fromPos.y, toPos.x, toPos.y, wire.waypoints);
         const isSelected = selectedWireId === wire.id;
-        const strokeColor = getWireStroke(wire.value, isSelected);
+        const strokeColor = getWireStroke(wire.value, isSelected, Boolean(wire.error));
         const isHigh = wire.value === 1;
 
         return (
           <g key={wire.id} className="wire-group cursor-pointer">
+            <title>
+              {wire.error
+                ? 'Invalid connection or conflicting drivers'
+                : wire.value === 'X'
+                  ? 'Unknown logic value (X)'
+                  : wire.value === 'Z'
+                    ? 'Floating / high-impedance value (Z)'
+                    : `Logic ${wire.value}`}
+            </title>
             {/* Thick transparent touch/click target for mobile and desktop */}
             <path
               d={pathData}

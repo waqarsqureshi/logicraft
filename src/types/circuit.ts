@@ -105,9 +105,11 @@ export interface CircuitComponent {
     ledColor?: string; // red, green, blue, amber, purple, cyan
     internalQ?: LogicValue; // for latches / flip-flops
     internalQbar?: LogicValue;
+    initialQ?: LogicValue; // documented power-on state restored by Reset
     isUndefined?: boolean; // for SR Latch invalid S=1, R=1 state
     counterValue?: number; // for counter
     lastClock?: LogicValue; // for edge detection
+    clockConnectionKey?: string; // prevents edits/new connections from creating false clock edges
     // Timing Analyzer oscilloscope history
     simTick?: number;
     timingHistory?: {
@@ -124,6 +126,7 @@ export interface Wire {
   toPinId: string;
   value: LogicValue;
   voltage: number;
+  error?: boolean;
   waypoints?: { x: number; y: number }[];
 }
 
@@ -141,7 +144,7 @@ export interface CircuitProject {
 
 export interface CircuitError {
   id: string;
-  type: 'floating_input' | 'contention' | 'oscillation' | 'high_impedance' | 'invalid_state';
+  type: 'floating_input' | 'contention' | 'oscillation' | 'high_impedance' | 'invalid_state' | 'invalid_connection';
   severity: 'warning' | 'error';
   message: string;
   componentId?: string;

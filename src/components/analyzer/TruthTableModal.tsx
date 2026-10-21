@@ -6,7 +6,7 @@
  * click-to-rename for inputs and outputs.
  */
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Check,
   ChevronRight,
@@ -23,7 +23,9 @@ import {
   Zap,
 } from 'lucide-react';
 import { CircuitProject } from '../../types/circuit';
+import { COMPONENT_DEFINITIONS } from '../../engine/definitions';
 import { generateTruthTable, BooleanEquationResult } from '../../engine/truthTable';
+import { generateSequentialTruthTable } from '../../engine/sequentialTruthTable';
 import {
   COMBINATIONAL_CIRCUITS,
   CombinationalCircuitBenchmark,
@@ -52,14 +54,34 @@ export const TruthTableModal: React.FC<TruthTableModalProps> = ({
   const [editingHeaderId, setEditingHeaderId] = useState<string | null>(null);
   const [headerEditValue, setHeaderEditValue] = useState<string>('');
   const [copiedEqId, setCopiedEqId] = useState<string | null>(null);
+  const activeBenchmark = COMBINATIONAL_CIRCUITS.find((benchmark) => benchmark.id === selectedTab);
+  const targetProject = activeBenchmark ? activeBenchmark.project : project;
+  const sequentialComponents = targetProject.components.filter((component) =>
+    ['D_FLIP_FLOP', 'JK_FLIP_FLOP', 'T_FLIP_FLOP', 'SR_LATCH', 'D_LATCH', 'JK_LATCH', 'COUNTER_4BIT']
+      .includes(component.type)
+  );
+  const [selectedSequentialId, setSelectedSequentialId] = useState('');
+  const [demoInputs, setDemoInputs] = useState<Record<string, string>>({});
+  const selectedSequential = sequentialComponents.find((component) => component.id === selectedSequentialId)
+    || sequentialComponents[0];
+  const sequentialTable = selectedSequential
+    ? generateSequentialTruthTable(selectedSequential.type)
+    : null;
+
+  useEffect(() => {
+    if (!selectedSequential || !sequentialTable?.rows[0]) {
+      setDemoInputs({});
+      return;
+    }
+    setDemoInputs({
+      ...sequentialTable.rows[0].inputs,
+      Q: sequentialTable.rows[0].currentQ,
+    });
+  }, [targetProject.id, selectedSequential?.id]);
 
   if (!isOpen) return null;
 
   const isLight = theme === 'light';
-
-  // Determine which project to evaluate: active canvas or selected benchmark
-  const activeBenchmark = COMBINATIONAL_CIRCUITS.find((b) => b.id === selectedTab);
-  const targetProject = activeBenchmark ? activeBenchmark.project : project;
 
   const tableData = generateTruthTable(targetProject);
 
@@ -210,7 +232,133 @@ export const TruthTableModal: React.FC<TruthTableModalProps> = ({
             </div>
           )}
 
-          {!tableData || tableData.rows.length === 0 ? (
+          {selectedSequential && sequentialTable && (
+            <section
+              aria-labelledby="sequential-table-heading"
+              className={`p-3 sm:p-4 rounded-2xl border ${
+                isLight ? 'bg-white border-slate-200' : 'bg-slate-950 border-slate-800'
+              }`}
+            >
+              <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+                <div>
+                  <h3 id="sequential-table-heading" className="text-sm font-bold">
+                    Sequential next-state table
+                  </h3>
+                  <p className="text-[11px] text-slate-400 mt-0.5">
+                    Interactive teaching example; changing values here does not edit the circuit.
+                  </p>
+                </div>
+                <select
+                  value={selectedSequential.id}
+                  onChange={(event) => setSelectedSequentialId(event.target.value)}
+                  aria-label="Select sequential component"
+                  className={`max-w-full min-w-0 text-xs font-semibold px-2.5 py-2 rounded-lg border focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#840038] ${
+                    isLight
+                      ? 'bg-white border-slate-300 text-slate-800'
+                      : 'bg-slate-900 border-slate-700 text-slate-100'
+                  }`}
+                >
+                  {sequentialComponents.map((component) => (
+                    <option key={component.id} value={component.id}>
+                      {component.label || COMPONENT_DEFINITIONS[component.type]?.name || component.type}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <p className={`text-xs leading-relaxed mb-4 ${
+                isLight ? 'text-slate-600' : 'text-slate-300'
+              }`}>
+                {sequentialTable.description}
+              </p>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5 mb-4">
+                {[
+                  ...Object.keys(sequentialTable.rows[0]?.inputs || {}),
+                  'Q',
+                ].map((key) => {
+                  const options = [...new Set(sequentialTable.rows.map((row) =>
+                    key === 'Q' ? row.currentQ : row.inputs[key]
+                  ).filter((value): value is string => value !== undefined))];
+                  return (
+                    <label key={key} className="min-w-0 flex flex-col gap-1 text-[11px] font-semibold text-slate-500">
+                      <span>{key === 'Q' ? 'Current Q' : key === 'CLK' ? 'Clock condition' : key}</span>
+                      <select
+                        value={demoInputs[key] ?? options[0] ?? ''}
+                        onChange={(event) => setDemoInputs((current) => ({
+                          ...current,
+                          [key]: event.target.value,
+                        }))}
+                        aria-label={key === 'Q' ? 'Current Q state' : key === 'CLK' ? 'Clock condition' : `${key} input`}
+                        className={`w-full min-h-9 px-2 py-1.5 rounded-lg border text-xs focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#840038] ${
+                          isLight
+                            ? 'bg-white border-slate-300 text-slate-800'
+                            : 'bg-slate-900 border-slate-700 text-slate-100'
+                        }`}
+                      >
+                        {options.map((option) => (
+                          <option key={option} value={option}>{option}</option>
+                        ))}
+                      </select>
+                    </label>
+                  );
+                })}
+              </div>
+
+              <div className="overflow-x-auto rounded-xl border border-slate-700/50">
+                <table className="w-full min-w-max text-left font-mono text-xs">
+                  <thead>
+                    <tr className={isLight ? 'bg-slate-100 text-slate-600' : 'bg-slate-900 text-slate-300'}>
+                      {sequentialTable.headers.map((header) => (
+                        <th key={header} scope="col" className="px-3 py-2.5 font-semibold whitespace-nowrap">
+                          {header}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sequentialTable.rows.map((row, index) => {
+                      const selected = row.currentQ === demoInputs.Q
+                        && Object.entries(row.inputs).every(([key, value]) => demoInputs[key] === value);
+                      return (
+                        <tr
+                          key={`${index}-${row.currentQ}-${row.nextQ}`}
+                          aria-current={selected ? 'true' : undefined}
+                          className={`border-t ${
+                            selected
+                              ? isLight
+                                ? 'bg-emerald-100 text-emerald-950 font-bold'
+                                : 'bg-emerald-950/60 text-emerald-200 font-bold'
+                              : isLight
+                                ? 'border-slate-200 text-slate-700'
+                                : 'border-slate-800 text-slate-300'
+                          }`}
+                        >
+                          {sequentialTable.headers.map((header) => {
+                            const value = header === 'Q (current)'
+                              ? row.currentQ
+                              : header === 'Q (next)'
+                                ? row.nextQ
+                                : row.inputs[header === 'CLK event' ? 'CLK' : header];
+                            return (
+                              <td key={header} className="px-3 py-2.5 whitespace-nowrap">
+                                {value ?? '—'}
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              <p className="mt-2 text-[11px] text-slate-400">
+                X means the state cannot be determined from the given inputs. A rising edge is an actual LOW-to-HIGH transition, not a clock held HIGH.
+              </p>
+            </section>
+          )}
+
+          {(!tableData || tableData.rows.length === 0) && !selectedSequential && (
             <div className="text-center py-12 text-slate-400">
               <div className="w-12 h-12 rounded-2xl bg-blue-500/10 text-blue-400 flex items-center justify-center mx-auto mb-3">
                 <Table className="w-6 h-6" />
@@ -237,7 +385,9 @@ export const TruthTableModal: React.FC<TruthTableModalProps> = ({
                 </button>
               </div>
             </div>
-          ) : (
+          )}
+
+          {tableData && tableData.rows.length > 0 && (
             <>
               {/* 1. MATHEMATICAL BOOLEAN EQUATIONS CARD */}
               <div

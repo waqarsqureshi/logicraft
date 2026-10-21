@@ -11,6 +11,7 @@ import {
   Pin,
   Wire,
 } from '../types/circuit';
+import { COMPONENT_DEFINITIONS, createComponentPins } from './definitions';
 
 export interface SimulationResult {
   components: CircuitComponent[];
@@ -21,6 +22,10 @@ export interface SimulationResult {
 }
 
 const MAX_SETTLING_PASSES = 40;
+
+export function normalizeLogicValue(value: unknown): LogicValue {
+  return value === 0 || value === 1 || value === 'X' || value === 'Z' ? value : 'X';
+}
 
 export function logicToVoltage(val: LogicValue): number {
   if (val === 1) return 5.0;
@@ -33,7 +38,7 @@ export function evaluateComponent(
   component: CircuitComponent,
   inputs: LogicValue[],
   clockTick: boolean
-): { outputs: LogicValue[]; nextState?: Record<string, any> } {
+): { outputs: LogicValue[]; nextState?: Record<string, unknown> } {
   const compState = component.state || {};
 
   switch (component.type) {
@@ -148,6 +153,9 @@ export function evaluateComponent(
 
     case 'BCD_DECODER': {
       const [b0, b1, b2, b3] = inputs;
+      if ([b0, b1, b2, b3].some((value) => value !== 0 && value !== 1)) {
+        return { outputs: ['X', 'X', 'X', 'X', 'X'] };
+      }
       const v0 = b0 === 1 ? 1 : 0;
       const v1 = b1 === 1 ? 2 : 0;
       const v2 = b2 === 1 ? 4 : 0;
@@ -201,10 +209,10 @@ export function evaluateComponent(
 
     case 'DECODER_2TO4': {
       const [a0, a1, en] = inputs;
-      if (en !== 1) {
+      if (en === 0) {
         return { outputs: [0, 0, 0, 0] };
       }
-      if (a0 === 'X' || a0 === 'Z' || a1 === 'X' || a1 === 'Z') {
+      if (en !== 1 || (a0 !== 0 && a0 !== 1) || (a1 !== 0 && a1 !== 1)) {
         return { outputs: ['X', 'X', 'X', 'X'] };
       }
       const sel = (a1 === 1 ? 2 : 0) + (a0 === 1 ? 1 : 0);
@@ -220,10 +228,10 @@ export function evaluateComponent(
 
     case 'DECODER_3TO8': {
       const [a0, a1, a2, en] = inputs;
-      if (en !== 1) {
+      if (en === 0) {
         return { outputs: [0, 0, 0, 0, 0, 0, 0, 0] };
       }
-      if (a0 === 'X' || a0 === 'Z' || a1 === 'X' || a1 === 'Z' || a2 === 'X' || a2 === 'Z') {
+      if (en !== 1 || [a0, a1, a2].some((value) => value !== 0 && value !== 1)) {
         return { outputs: ['X', 'X', 'X', 'X', 'X', 'X', 'X', 'X'] };
       }
       const sel = (a2 === 1 ? 4 : 0) + (a1 === 1 ? 2 : 0) + (a0 === 1 ? 1 : 0);
@@ -234,10 +242,10 @@ export function evaluateComponent(
 
     case 'DECODER_4TO16': {
       const [a0, a1, a2, a3, en] = inputs;
-      if (en !== 1) {
+      if (en === 0) {
         return { outputs: Array(16).fill(0) as LogicValue[] };
       }
-      if (a0 === 'X' || a0 === 'Z' || a1 === 'X' || a1 === 'Z' || a2 === 'X' || a2 === 'Z' || a3 === 'X' || a3 === 'Z') {
+      if (en !== 1 || [a0, a1, a2, a3].some((value) => value !== 0 && value !== 1)) {
         return { outputs: Array(16).fill('X') as LogicValue[] };
       }
       const sel = (a3 === 1 ? 8 : 0) + (a2 === 1 ? 4 : 0) + (a1 === 1 ? 2 : 0) + (a0 === 1 ? 1 : 0);
@@ -248,8 +256,8 @@ export function evaluateComponent(
 
     case 'SR_LATCH': {
       const [s, r] = inputs;
-      let q = compState.internalQ ?? 0;
-      let qbar = compState.internalQbar ?? 1;
+      let q = normalizeLogicValue(compState.internalQ);
+      let qbar = normalizeLogicValue(compState.internalQbar);
       let isUndefined = false;
 
       if (s === 1 && r === 1) {
@@ -263,6 +271,9 @@ export function evaluateComponent(
       } else if (s === 0 && r === 1) {
         q = 0;
         qbar = 1;
+      } else if ((s !== 0 && s !== 1) || (r !== 0 && r !== 1)) {
+        q = 'X';
+        qbar = 'X';
       }
       // if 0, 0: hold previous valid state
       return {
@@ -273,9 +284,11 @@ export function evaluateComponent(
 
     case 'D_LATCH': {
       const [d, en] = inputs;
-      let q = compState.internalQ ?? 0;
+      let q = normalizeLogicValue(compState.internalQ);
       if (en === 1) {
-        q = d === 1 ? 1 : d === 0 ? 0 : 'X';
+        q = d === 0 || d === 1 ? d : 'X';
+      } else if (en !== 0) {
+        q = 'X';
       }
       const qbar = q === 'X' ? 'X' : q === 1 ? 0 : 1;
       return {
@@ -286,15 +299,19 @@ export function evaluateComponent(
 
     case 'JK_LATCH': {
       const [j, en, k] = inputs;
-      let q = compState.internalQ ?? 0;
+      let q = normalizeLogicValue(compState.internalQ);
       if (en === 1) {
         if (j === 0 && k === 1) {
           q = 0;
         } else if (j === 1 && k === 0) {
           q = 1;
         } else if (j === 1 && k === 1) {
-          q = q === 1 ? 0 : 1;
+          q = q === 0 ? 1 : q === 1 ? 0 : 'X';
+        } else {
+          q = 'X';
         }
+      } else if (en !== 0) {
+        q = 'X';
       }
       const qbar = q === 'X' ? 'X' : q === 1 ? 0 : 1;
       return {
@@ -306,21 +323,14 @@ export function evaluateComponent(
     case 'D_FLIP_FLOP': {
       const [d, clk] = inputs;
       const lastClock = compState.lastClock;
-      let q = compState.internalQ ?? 0;
-      let qbar = compState.internalQbar ?? 1;
+      let q = normalizeLogicValue(compState.internalQ);
+      let qbar = normalizeLogicValue(compState.internalQbar);
 
       // Positive edge triggered (0 -> 1)
-      if (lastClock !== undefined && lastClock === 0 && clk === 1) {
-        if (d === 1) {
-          q = 1;
-          qbar = 0;
-        } else if (d === 0) {
-          q = 0;
-          qbar = 1;
-        } else {
-          q = 'X';
-          qbar = 'X';
-        }
+      if (clockTick && lastClock === 0 && clk === 1) {
+        const captured: LogicValue = d === 0 || d === 1 ? d : 'X';
+        q = captured;
+        qbar = captured === 1 ? 0 : captured === 0 ? 1 : 'X';
       }
 
       return {
@@ -332,9 +342,9 @@ export function evaluateComponent(
     case 'JK_FLIP_FLOP': {
       const [j, clk, k] = inputs;
       const lastClock = compState.lastClock;
-      let q = compState.internalQ ?? 0;
+      let q = normalizeLogicValue(compState.internalQ);
 
-      if (lastClock !== undefined && lastClock === 0 && clk === 1) {
+      if (clockTick && lastClock === 0 && clk === 1) {
         if (j === 0 && k === 0) {
           // hold
         } else if (j === 0 && k === 1) {
@@ -342,7 +352,9 @@ export function evaluateComponent(
         } else if (j === 1 && k === 0) {
           q = 1;
         } else if (j === 1 && k === 1) {
-          q = q === 1 ? 0 : 1; // toggle
+          q = q === 1 ? 0 : q === 0 ? 1 : 'X'; // toggle only from a known state
+        } else {
+          q = 'X';
         }
       }
 
@@ -356,10 +368,11 @@ export function evaluateComponent(
     case 'T_FLIP_FLOP': {
       const [t, clk] = inputs;
       const lastClock = compState.lastClock;
-      let q = compState.internalQ ?? 0;
+      let q = normalizeLogicValue(compState.internalQ);
 
-      if (lastClock !== undefined && lastClock === 0 && clk === 1 && t === 1) {
-        q = q === 1 ? 0 : 1;
+      if (clockTick && lastClock === 0 && clk === 1) {
+        if (t === 1) q = q === 1 ? 0 : q === 0 ? 1 : 'X';
+        else if (t !== 0) q = 'X';
       }
 
       const qbar = q === 'X' ? 'X' : q === 1 ? 0 : 1;
@@ -376,7 +389,7 @@ export function evaluateComponent(
 
       if (rst === 1) {
         val = 0;
-      } else if (lastClock !== undefined && lastClock === 0 && clk === 1) {
+      } else if (clockTick && lastClock === 0 && clk === 1) {
         val = (val + 1) & 0xf;
       }
 
@@ -397,7 +410,7 @@ export function evaluateComponent(
       // NMOS turns ON when Gate is HIGH (1, 5V)
       const isOn = gate === 1;
       // When ON, conducts Drain to Source
-      const sourceVal: LogicValue = isOn ? (drain ?? 0) : 'Z';
+      const sourceVal: LogicValue = isOn ? normalizeLogicValue(drain) : 'Z';
       return {
         outputs: [sourceVal],
         nextState: { ...compState, isOn },
@@ -410,7 +423,7 @@ export function evaluateComponent(
       // PMOS turns ON when Gate is LOW (0, 0V)
       const isOn = gate === 0;
       // When ON, conducts Source to Drain
-      const drainVal: LogicValue = isOn ? (source ?? 1) : 'Z';
+      const drainVal: LogicValue = isOn ? normalizeLogicValue(source) : 'Z';
       return {
         outputs: [drainVal],
         nextState: { ...compState, isOn },
@@ -421,14 +434,14 @@ export function evaluateComponent(
       // inputs: [Node], outputs: [Weak 5V]
       const [node] = inputs;
       // If node is already actively driven to 0 (GND), it stays 0; if floating Z or 1, pulls to 1
-      const outVal: LogicValue = node === 0 ? 0 : 1;
+      const outVal: LogicValue = node === 0 ? 0 : node === 1 || node === 'Z' ? 1 : 'X';
       return { outputs: [outVal] };
     }
 
     case 'PULLDOWN_RESISTOR': {
       // inputs: [Node], outputs: [Weak 0V]
       const [node] = inputs;
-      const outVal: LogicValue = node === 1 ? 1 : 0;
+      const outVal: LogicValue = node === 1 ? 1 : node === 0 || node === 'Z' ? 0 : 'X';
       return { outputs: [outVal] };
     }
 
@@ -452,209 +465,450 @@ export function simulateCircuit(
   clockTick: boolean = false
 ): SimulationResult {
   const errors: CircuitError[] = [];
-  let buzzerActive = false;
+  const errorIds = new Set<string>();
+  const report = (error: CircuitError) => {
+    if (!errorIds.has(error.id)) {
+      errorIds.add(error.id);
+      errors.push(error);
+    }
+  };
 
-  // Deep clone components and wires
-  const components: CircuitComponent[] = project.components.map((c) => ({
-    ...c,
-    inputs: c.inputs.map((p) => ({ ...p })),
-    outputs: c.outputs.map((p) => ({ ...p })),
-    state: { ...(c.state || {}) },
+  const components = project.components.map((component) => ({
+    ...component,
+    inputs: component.inputs.map((pin) => {
+      const value = normalizeLogicValue(pin.value);
+      return { ...pin, value, voltage: logicToVoltage(value) };
+    }),
+    outputs: component.outputs.map((pin) => {
+      const value = normalizeLogicValue(pin.value);
+      return { ...pin, value, voltage: logicToVoltage(value) };
+    }),
+    state: { ...(component.state || {}) },
   }));
-
-  const wires: Wire[] = project.wires.map((w) => ({ ...w }));
-
-  // Index maps
+  const wires = project.wires.map((wire) => ({ ...wire, error: false }));
   const componentMap = new Map<string, CircuitComponent>();
-  components.forEach((c) => componentMap.set(c.id, c));
+  const seenComponentIds = new Set<string>();
+  const seenPinIds = new Set<string>();
 
-  const pinMap = new Map<string, Pin>();
-  components.forEach((c) => {
-    c.inputs.forEach((p) => pinMap.set(p.id, p));
-    c.outputs.forEach((p) => pinMap.set(p.id, p));
-  });
-
-  // Track connected wires to input pins
-  const inputPinWires = new Map<string, Wire[]>();
-  wires.forEach((w) => {
-    const list = inputPinWires.get(w.toPinId) || [];
-    list.push(w);
-    inputPinWires.set(w.toPinId, list);
-  });
-
-  // Check for floating inputs
-  components.forEach((c) => {
-    c.inputs.forEach((p) => {
-      const connected = inputPinWires.get(p.id);
-      if (!connected || connected.length === 0) {
-        if (project.autoPulldown) {
-          // Auto-pulldown mode ties unconnected inputs gently to Logic 0 (0V)
-          p.value = 0;
-          p.voltage = 0.0;
-        } else {
-          p.value = 'Z';
-          p.voltage = 2.5;
-          // Educational feedback explaining why floating pins cause 'X' output
-          errors.push({
-            id: `float_${p.id}`,
-            type: 'floating_input',
-            severity: 'warning',
-            message: `Floating Input Pin '${p.name}' on ${c.label || c.type}. In CMOS/TTL logic, open pins float at high-impedance (Z), making gate outputs unknown (X). Tie Pin '${p.name}' to Ground (0V) or Clock.`,
-            componentId: c.id,
-            componentName: c.label || c.type,
-            pinId: p.id,
-          });
-        }
-      }
-    });
-  });
-
-  // Multi-pass propagation to handle feedback loops and multi-stage logic
-  let settled = false;
-  let passes = 0;
-
-  while (!settled && passes < MAX_SETTLING_PASSES) {
-    passes++;
-    settled = true;
-
-    // 1. Evaluate component transfer functions
-    for (const comp of components) {
-      const inVals = comp.inputs.map((p) => p.value);
-      const isClockPulse = clockTick && passes === 1;
-      const { outputs: newOutputs, nextState } = evaluateComponent(comp, inVals, isClockPulse);
-
-      if (nextState) {
-        comp.state = nextState;
-      }
-
-      // Check if any output pin value changed
-      newOutputs.forEach((outVal, idx) => {
-        const pin = comp.outputs[idx];
-        if (pin && pin.value !== outVal) {
-          pin.value = outVal;
-          pin.voltage = logicToVoltage(outVal);
-          settled = false;
-        }
+  for (const component of components) {
+    if (seenComponentIds.has(component.id)) {
+      report({
+        id: `duplicate_component_${component.id}`,
+        type: 'invalid_connection',
+        severity: 'error',
+        message: `Duplicate component identifier "${component.id}".`,
+        componentId: component.id,
       });
+    } else {
+      seenComponentIds.add(component.id);
+      componentMap.set(component.id, component);
     }
 
-    // 2. Propagate values across wires to inputs
-    for (const wire of wires) {
-      const fromComp = componentMap.get(wire.fromComponentId);
-      const toComp = componentMap.get(wire.toComponentId);
-      if (!fromComp || !toComp) continue;
-
-      const fromPin = fromComp.outputs.find((p) => p.id === wire.fromPinId);
-      const toPin = toComp.inputs.find((p) => p.id === wire.toPinId);
-      if (!fromPin || !toPin) continue;
-
-      const currentVal = fromPin.value;
-      wire.value = currentVal;
-      wire.voltage = fromPin.voltage;
-
-      // Handle contention: multiple wires driving the same input pin
-      const allWiresToPin = inputPinWires.get(toPin.id) || [];
-      if (allWiresToPin.length > 1) {
-        // Check for conflicting values
-        const driverValues = allWiresToPin
-          .map((w) => {
-            const fc = componentMap.get(w.fromComponentId);
-            return fc?.outputs.find((p) => p.id === w.fromPinId)?.value;
-          })
-          .filter((v) => v !== undefined && v !== 'Z');
-
-        const hasZero = driverValues.includes(0);
-        const hasOne = driverValues.includes(1);
-
-        if (hasZero && hasOne) {
-          toPin.value = 'X';
-          toPin.voltage = 2.5;
-          wire.value = 'X';
-          errors.push({
-            id: `contention_${toPin.id}`,
-            type: 'contention',
-            severity: 'error',
-            message: `Bus Contention / Short Circuit on ${toComp.label || toComp.type}.${toPin.name}: Multiple active outputs are driving opposite logic states (0V vs 5V)!`,
-            componentId: toComp.id,
-            pinId: toPin.id,
-            wireId: wire.id,
-          });
-          continue;
-        }
+    for (const pin of component.inputs) {
+      if (seenPinIds.has(pin.id)) {
+        report({
+          id: `duplicate_pin_${pin.id}`,
+          type: 'invalid_connection',
+          severity: 'error',
+          message: `Duplicate pin identifier "${pin.id}".`,
+          componentId: component.id,
+          pinId: pin.id,
+        });
       }
-
-      if (toPin.value !== currentVal) {
-        toPin.value = currentVal;
-        toPin.voltage = fromPin.voltage;
-        settled = false;
+      seenPinIds.add(pin.id);
+    }
+    for (const pin of component.outputs) {
+      if (seenPinIds.has(pin.id)) {
+        report({
+          id: `duplicate_pin_${pin.id}`,
+          type: 'invalid_connection',
+          severity: 'error',
+          message: `Duplicate pin identifier "${pin.id}".`,
+          componentId: component.id,
+          pinId: pin.id,
+        });
       }
+      seenPinIds.add(pin.id);
     }
   }
 
-  // Check for oscillation if reached max passes
-  if (passes >= MAX_SETTLING_PASSES) {
-    errors.push({
+  const inputPinWires = new Map<string, Wire[]>();
+  const validWires = new Set<Wire>();
+  const activeContentions = new Map<string, {
+    component: CircuitComponent;
+    pin: Pin;
+    wires: Wire[];
+  }>();
+  for (const wire of wires) {
+    const fromComponent = componentMap.get(wire.fromComponentId);
+    const toComponent = componentMap.get(wire.toComponentId);
+    const fromPin = fromComponent?.outputs.find((pin) => pin.id === wire.fromPinId);
+    const toPin = toComponent?.inputs.find((pin) => pin.id === wire.toPinId);
+    if (!fromComponent || !toComponent || !fromPin || !toPin) {
+      wire.error = true;
+      report({
+        id: `invalid_wire_${wire.id}`,
+        type: 'invalid_connection',
+        severity: 'error',
+        message: `Wire "${wire.id}" must connect an existing output pin to an existing input pin.`,
+        wireId: wire.id,
+      });
+      continue;
+    }
+    validWires.add(wire);
+    const connected = inputPinWires.get(toPin.id) || [];
+    connected.push(wire);
+    inputPinWires.set(toPin.id, connected);
+  }
+
+  for (const component of components) {
+    for (const output of component.outputs) {
+      output.value = 'X';
+      output.voltage = logicToVoltage('X');
+    }
+    if (component.type === 'CLOCK') {
+      const output = component.outputs[0];
+      if (output) {
+        output.value = normalizeLogicValue(project.components.find((item) => item.id === component.id)?.outputs?.[0]?.value);
+        if (output.value !== 0 && output.value !== 1) output.value = 0;
+        output.voltage = logicToVoltage(output.value);
+        if (clockTick) {
+          output.value = output.value === 1 ? 0 : 1;
+          output.voltage = logicToVoltage(output.value);
+        }
+      }
+      component.state = {
+        ...component.state,
+        clockTicks: (Number(component.state?.clockTicks) || 0) + (clockTick ? 1 : 0),
+      };
+    } else if (component.type === 'CONST_HIGH' || component.type === 'CONST_LOW' ||
+      component.type === 'SWITCH' || component.type === 'BUTTON') {
+      const { outputs } = evaluateComponent(component, [], false);
+      outputs.forEach((value, index) => {
+        if (component.outputs[index]) {
+          component.outputs[index].value = normalizeLogicValue(value);
+          component.outputs[index].voltage = logicToVoltage(component.outputs[index].value);
+        }
+      });
+    } else if (isSequentialType(component.type)) {
+      const q = normalizeLogicValue(component.state?.internalQ);
+      const qbar = q === 0 || q === 1 ? (q === 1 ? 0 : 1) : 'X';
+      component.state = { ...component.state, internalQ: q, internalQbar: qbar };
+      const outputValues: LogicValue[] = component.type === 'COUNTER_4BIT'
+        ? counterOutputs(Number(component.state.counterValue) || 0)
+        : [q, qbar];
+      outputValues.forEach((value, index) => {
+        if (component.outputs[index]) {
+          component.outputs[index].value = value;
+          component.outputs[index].voltage = logicToVoltage(value);
+        }
+      });
+    }
+  }
+
+  const resolveInputs = (): boolean => {
+    let changed = false;
+    activeContentions.clear();
+    validWires.forEach((wire) => { wire.error = false; });
+    for (const component of components) {
+      for (const pin of component.inputs) {
+        const connected = inputPinWires.get(pin.id) || [];
+        let value: LogicValue;
+        if (connected.length === 0) {
+          value = project.autoPulldown ? 0 : 'Z';
+          if (!project.autoPulldown) {
+            report({
+              id: `float_${pin.id}`,
+              type: 'floating_input',
+              severity: 'warning',
+              message: `Floating input "${pin.name}" on ${component.label || component.type}; it resolves to Z.`,
+              componentId: component.id,
+              componentName: component.label || component.type,
+              pinId: pin.id,
+            });
+          }
+        } else {
+          const driverValues = connected.map((wire) => {
+            const driver = componentMap.get(wire.fromComponentId);
+            return normalizeLogicValue(driver?.outputs.find((output) => output.id === wire.fromPinId)?.value);
+          });
+          const hasLow = driverValues.includes(0);
+          const hasHigh = driverValues.includes(1);
+          if (hasLow && hasHigh) {
+            value = 'X';
+            connected.forEach((wire) => { wire.error = true; });
+            activeContentions.set(pin.id, { component, pin, wires: connected });
+          } else if (driverValues.includes('X')) {
+            value = 'X';
+          } else {
+            const drivenValues = driverValues.filter((driverValue) => driverValue !== 'Z');
+            value = drivenValues[0] ?? 'Z';
+          }
+        }
+        for (const wire of connected) {
+          const source = componentMap.get(wire.fromComponentId)?.outputs.find((output) => output.id === wire.fromPinId);
+          if (source) {
+            wire.value = normalizeLogicValue(source.value);
+            wire.voltage = logicToVoltage(wire.value);
+          }
+        }
+        if (pin.value !== value) changed = true;
+        pin.value = value;
+        pin.voltage = logicToVoltage(value);
+      }
+    }
+    return changed;
+  };
+
+  const settleCombinational = (): boolean => {
+    let settled = false;
+    let passes = 0;
+    while (!settled && passes < MAX_SETTLING_PASSES) {
+      passes++;
+      const inputsChanged = resolveInputs();
+      const nextOutputs = new Map<Pin, LogicValue>();
+      for (const component of components) {
+        if (isSequentialType(component.type) || component.type === 'CLOCK') continue;
+        const { outputs } = evaluateComponent(component, component.inputs.map((pin) => pin.value), false);
+        outputs.forEach((value, index) => {
+          const output = component.outputs[index];
+          if (output) nextOutputs.set(output, normalizeLogicValue(value));
+        });
+      }
+
+      let outputsChanged = false;
+      for (const [pin, value] of nextOutputs) {
+        if (pin.value !== value) outputsChanged = true;
+        pin.value = value;
+        pin.voltage = logicToVoltage(value);
+      }
+      settled = !inputsChanged && !outputsChanged;
+    }
+    return settled;
+  };
+
+  let settled = settleCombinational();
+  if (!settled) {
+    report({
       id: 'oscillation_detected',
       type: 'oscillation',
       severity: 'warning',
-      message: 'Unstable Feedback Loop or High-Frequency Oscillation detected in circuit.',
+      message: `Combinational signals did not settle within ${MAX_SETTLING_PASSES} passes.`,
     });
   }
 
-  // Check for SR Latch undefined state (S=1, R=1 forbidden inputs)
-  components.forEach((c) => {
-    if (c.type === 'SR_LATCH' && (c.state?.isUndefined || (c.inputs[0]?.value === 1 && c.inputs[1]?.value === 1))) {
-      errors.push({
-        id: `invalid_sr_${c.id}`,
-        type: 'invalid_state',
-        severity: 'warning',
-        message: `SR Latch "${c.label || 'SR Latch'}": Undefined / Forbidden State! When both S=1 and R=1, the state is undefined (causes race conditions / metastability).`,
-        componentId: c.id,
-      });
+  for (const component of components) {
+    if (!isSequentialType(component.type)) continue;
+    const inputs = component.inputs.map((pin) => pin.value);
+    const clockIndex = clockInputIndex(component.type);
+    if (clockIndex !== null) {
+      const clockPin = component.inputs[clockIndex];
+      const clockWires = inputPinWires.get(clockPin?.id || '') || [];
+      const connectionKey = clockWires.map((wire) => `${wire.fromComponentId}:${wire.fromPinId}`).sort().join('|');
+      if (component.state?.clockConnectionKey !== connectionKey) {
+        component.state = {
+          ...component.state,
+          lastClock: normalizeLogicValue(clockPin?.value),
+          clockConnectionKey: connectionKey,
+        };
+      } else {
+        const { nextState } = evaluateComponent(component, inputs, clockTick);
+        if (nextState) component.state = { ...component.state, ...nextState };
+        component.state = { ...component.state, clockConnectionKey: connectionKey };
+        continue;
+      }
     }
-  });
+    const { nextState } = evaluateComponent(component, inputs, false);
+    if (nextState) component.state = { ...component.state, ...nextState };
+  }
 
-  // Check buzzer activation
-  components.forEach((c) => {
-    if (c.type === 'BUZZER' && c.inputs[0]?.value === 1) {
-      buzzerActive = true;
-    }
-  });
-
-  // Update TIMING_ANALYZER oscilloscopes with settled channel values
-  components.forEach((c) => {
-    if (c.type === 'TIMING_ANALYZER') {
-      const currentTick = (c.state?.simTick || 0) + 1;
-      const history = { ...(c.state?.timingHistory || {}) };
-
-      c.inputs.forEach((pin) => {
-        const val: LogicValue = pin.value;
-        const volt = pin.voltage ?? (val === 1 ? 5.0 : val === 0 ? 0.0 : 2.5);
-        const pinHist = history[pin.id] ? [...history[pin.id]] : [];
-        pinHist.push({ tick: currentTick, value: val, voltage: volt });
-        // Keep up to 36 samples for smooth scrolling oscilloscope window
-        if (pinHist.length > 36) {
-          pinHist.shift();
-        }
-        history[pin.id] = pinHist;
-      });
-
-      c.state = {
-        ...c.state,
-        simTick: currentTick,
-        timingHistory: history,
+  for (const component of components) {
+    if (!isSequentialType(component.type)) continue;
+    const { outputs, nextState } = evaluateComponent(component, component.inputs.map((pin) => pin.value), false);
+    if (nextState) {
+      component.state = {
+        ...component.state,
+        ...nextState,
+        internalQbar: normalizeLogicValue(component.state.internalQ) === 0
+          ? 1
+          : normalizeLogicValue(component.state.internalQ) === 1
+            ? 0
+            : 'X',
       };
     }
-  });
+    outputs.forEach((value, index) => {
+      const output = component.outputs[index];
+      if (output) {
+        output.value = normalizeLogicValue(value);
+        output.voltage = logicToVoltage(output.value);
+      }
+    });
+  }
 
-  // Calculate active nodes count
-  const activeNodesCount = wires.filter((w) => w.value === 1).length;
+  settled = settleCombinational();
+  if (!settled && !errorIds.has('oscillation_detected')) {
+    report({
+      id: 'oscillation_detected',
+      type: 'oscillation',
+      severity: 'warning',
+      message: `Combinational signals did not settle within ${MAX_SETTLING_PASSES} passes.`,
+    });
+  }
+
+  for (const { component, pin, wires: connected } of activeContentions.values()) {
+    report({
+      id: `contention_${pin.id}`,
+      type: 'contention',
+      severity: 'error',
+      message: `Conflicting output drivers on ${component.label || component.type}.${pin.name}.`,
+      componentId: component.id,
+      componentName: component.label || component.type,
+      pinId: pin.id,
+      wireId: connected[0]?.id,
+    });
+  }
+
+  let buzzerActive = false;
+  for (const component of components) {
+    if (component.type === 'SR_LATCH' && (component.state?.isUndefined ||
+      (component.inputs[0]?.value === 1 && component.inputs[1]?.value === 1))) {
+      report({
+        id: `invalid_sr_${component.id}`,
+        type: 'invalid_state',
+        severity: 'warning',
+        message: `SR latch "${component.label || component.type}" has both set and reset asserted.`,
+        componentId: component.id,
+      });
+    }
+    if (component.type === 'BUZZER' && component.inputs[0]?.value === 1) buzzerActive = true;
+    if (component.type === 'TIMING_ANALYZER' && clockTick) {
+      const currentTick = (Number(component.state?.simTick) || 0) + 1;
+      const history = { ...(component.state?.timingHistory || {}) };
+      for (const pin of component.inputs) {
+        const samples = [...(history[pin.id] || []), {
+          tick: currentTick,
+          value: pin.value,
+          voltage: pin.voltage,
+        }];
+        if (samples.length > 36) samples.shift();
+        history[pin.id] = samples;
+      }
+      component.state = { ...component.state, simTick: currentTick, timingHistory: history };
+    }
+  }
+
+  for (const wire of wires) {
+    if (!validWires.has(wire)) continue;
+    const source = componentMap.get(wire.fromComponentId)?.outputs.find((pin) => pin.id === wire.fromPinId);
+    if (!source) continue;
+    wire.value = normalizeLogicValue(source.value);
+    wire.voltage = logicToVoltage(wire.value);
+  }
 
   return {
     components,
     wires,
     errors,
     buzzerActive,
-    activeNodesCount,
+    activeNodesCount: wires.filter((wire) => wire.value === 1).length,
   };
+}
+
+function isSequentialType(type: CircuitComponent['type']): boolean {
+  return type === 'SR_LATCH' || type === 'D_LATCH' || type === 'JK_LATCH' ||
+    type === 'D_FLIP_FLOP' || type === 'JK_FLIP_FLOP' ||
+    type === 'T_FLIP_FLOP' || type === 'COUNTER_4BIT';
+}
+
+function clockInputIndex(type: CircuitComponent['type']): number | null {
+  switch (type) {
+    case 'D_FLIP_FLOP':
+    case 'T_FLIP_FLOP':
+      return 1;
+    case 'JK_FLIP_FLOP':
+      return 1;
+    case 'COUNTER_4BIT':
+      return 0;
+    default:
+      return null;
+  }
+}
+
+function counterOutputs(value: number): LogicValue[] {
+  return [0, 1, 2, 3].map((bit) => ((value >> bit) & 1) as LogicValue);
+}
+
+export function resetProjectRuntime(project: CircuitProject): CircuitProject {
+  const components = (Array.isArray(project.components) ? project.components : []).map((rawComponent, index) => {
+    const component = rawComponent as CircuitComponent;
+    const definition = COMPONENT_DEFINITIONS[component.type];
+    const generated = definition
+      ? createComponentPins(component.type, definition.width, definition.height, component.id || `component_${index}`)
+      : { inputs: [], outputs: [] };
+    const normalizePins = (pins: Pin[] | undefined, defaults: Pin[], direction: Pin['type']): Pin[] => {
+      const sourcePins = Array.isArray(pins) && pins.length > 0 ? pins : defaults;
+      const normalized = sourcePins.map((pin, pinIndex) => {
+        const value: LogicValue = direction === 'output' && component.type === 'CLOCK' ? 0 : 'X';
+        const id = typeof pin?.id === 'string' && pin.id.length > 0
+          ? pin.id
+          : defaults[pinIndex]?.id || `${component.id || `component_${index}`}_${direction}_${pinIndex}`;
+        return {
+          ...defaults[pinIndex],
+          ...pin,
+          id,
+          name: typeof pin?.name === 'string' ? pin.name : defaults[pinIndex]?.name || `${direction}${pinIndex}`,
+          type: direction,
+          index: Number.isInteger(pin?.index) ? pin.index : pinIndex,
+          value,
+          voltage: logicToVoltage(value),
+          relativeX: Number.isFinite(pin?.relativeX) ? pin.relativeX : defaults[pinIndex]?.relativeX || 0,
+          relativeY: Number.isFinite(pin?.relativeY) ? pin.relativeY : defaults[pinIndex]?.relativeY || 0,
+        };
+      });
+      for (const defaultPin of defaults) {
+        if (normalized.some((pin) => pin.index === defaultPin.index || pin.name === defaultPin.name)) continue;
+        const value: LogicValue = direction === 'output' && component.type === 'CLOCK' ? 0 : 'X';
+        normalized.push({
+          ...defaultPin,
+          value,
+          voltage: logicToVoltage(value),
+        });
+      }
+      return normalized.sort((a, b) => a.index - b.index);
+    };
+
+    const state = { ...(component.state || {}) };
+    delete state.clockConnectionKey;
+    delete state.lastClock;
+    if (component.type === 'CLOCK') state.clockTicks = 0;
+    if (isSequentialType(component.type)) {
+      const initialQ = normalizeLogicValue(state.initialQ);
+      state.internalQ = initialQ === 'Z' ? 'X' : initialQ;
+      state.internalQbar = state.internalQ === 0
+        ? 1
+        : state.internalQ === 1
+          ? 0
+          : 'X';
+      if (component.type === 'COUNTER_4BIT') state.counterValue = 0;
+    }
+    if (component.type === 'TIMING_ANALYZER') {
+      state.simTick = 0;
+      state.timingHistory = {};
+    }
+    return {
+      ...component,
+      id: component.id || `component_${index}`,
+      inputs: normalizePins(component.inputs, generated.inputs, 'input'),
+      outputs: normalizePins(component.outputs, generated.outputs, 'output'),
+      state,
+    };
+  });
+  const wires = (Array.isArray(project.wires) ? project.wires : []).map((wire, index) => ({
+    ...wire,
+    id: typeof wire.id === 'string' && wire.id.length > 0 ? wire.id : `wire_${index}`,
+    value: 'X' as LogicValue,
+    voltage: logicToVoltage('X'),
+    error: false,
+  }));
+  return { ...project, components, wires };
 }

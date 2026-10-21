@@ -12,7 +12,7 @@ import {
   WaveformSample,
 } from './types/circuit';
 import { COMPONENT_DEFINITIONS, createComponentPins } from './engine/definitions';
-import { simulateCircuit } from './engine/simulation';
+import { resetProjectRuntime, simulateCircuit } from './engine/simulation';
 import { getDefaultProject, loadCurrentProject, saveCurrentProject } from './utils/storage';
 import { soundFx } from './utils/audio';
 import { TutorialLesson } from './data/tutorials';
@@ -57,7 +57,16 @@ export default function App() {
   }, [theme]);
 
   // Primary Circuit Project
-  const [project, setProject] = useState<CircuitProject>(() => loadCurrentProject());
+  const [initialProject] = useState(() => {
+    const loaded = resetProjectRuntime(loadCurrentProject());
+    const result = simulateCircuit(loaded, false);
+    return {
+      project: { ...loaded, components: result.components, wires: result.wires },
+      errors: result.errors,
+    };
+  });
+  const [project, setProject] = useState<CircuitProject>(initialProject.project);
+  const projectRef = useRef(project);
 
   // Auto-Pulldown state for unconnected gate inputs
   const [autoPulldown, setAutoPulldown] = useState<boolean>(() => project.autoPulldown ?? false);
@@ -74,11 +83,11 @@ export default function App() {
 
   // Simulation Engine State
   const [simState, setSimState] = useState<SimulationState>({
-    running: true,
+    running: false,
     frequencyHz: 1,
     tickCount: 0,
     stepMode: false,
-    errors: [],
+    errors: initialProject.errors,
   });
 
   // Waveform Buffer for Timing Analyzer (Oscilloscope)
@@ -133,8 +142,12 @@ export default function App() {
         if (undoStackRef.current.length > 30) undoStackRef.current.shift();
         redoStackRef.current = [];
       }
-      setProject(newProject);
-      saveCurrentProject(newProject);
+      const result = simulateCircuit(newProject, false);
+      const evaluatedProject = { ...newProject, components: result.components, wires: result.wires };
+      projectRef.current = evaluatedProject;
+      setProject(evaluatedProject);
+      setSimState((state) => ({ ...state, errors: result.errors }));
+      saveCurrentProject(evaluatedProject);
     },
     [project]
   );
@@ -144,16 +157,24 @@ export default function App() {
     if (undoStackRef.current.length === 0) return;
     const prev = undoStackRef.current.pop()!;
     redoStackRef.current.push(JSON.parse(JSON.stringify(project)));
-    setProject(prev);
-    saveCurrentProject(prev);
+    const result = simulateCircuit(prev, false);
+    const evaluated = { ...prev, components: result.components, wires: result.wires };
+    projectRef.current = evaluated;
+    setProject(evaluated);
+    setSimState((state) => ({ ...state, errors: result.errors }));
+    saveCurrentProject(evaluated);
   }, [project]);
 
   const handleRedo = useCallback(() => {
     if (redoStackRef.current.length === 0) return;
     const next = redoStackRef.current.pop()!;
     undoStackRef.current.push(JSON.parse(JSON.stringify(project)));
-    setProject(next);
-    saveCurrentProject(next);
+    const result = simulateCircuit(next, false);
+    const evaluated = { ...next, components: result.components, wires: result.wires };
+    projectRef.current = evaluated;
+    setProject(evaluated);
+    setSimState((state) => ({ ...state, errors: result.errors }));
+    saveCurrentProject(evaluated);
   }, [project]);
 
   // Insert component from palette
@@ -184,48 +205,55 @@ export default function App() {
 
   // Main Simulation Loop
   useEffect(() => {
+    if (!simState.running) {
+      soundFx.stopBuzzer();
+      return;
+    }
+
     const intervalMs = Math.round(1000 / simState.frequencyHz);
+    let disposed = false;
+    let timer: ReturnType<typeof setTimeout>;
+    const scheduleTick = () => {
+      timer = setTimeout(() => {
+        if (disposed) return;
+      const result = simulateCircuit(projectRef.current, true);
+      const nextProject = {
+        ...projectRef.current,
+        components: result.components,
+        wires: result.wires,
+      };
+      projectRef.current = nextProject;
+      setProject(nextProject);
 
-    const timer = setInterval(() => {
-      if (!simState.running) return;
+      if (result.buzzerActive) {
+        soundFx.startBuzzer(880);
+      } else {
+        soundFx.stopBuzzer();
+      }
 
-      setProject((currProject) => {
-        const isClockTick = true;
-        const result = simulateCircuit(currProject, isClockTick);
-
-        // Audio feedback
-        if (result.buzzerActive) {
-          soundFx.startBuzzer(880);
-        } else {
-          soundFx.stopBuzzer();
-        }
-
-        // Record waveform sample
-        const signals: Record<string, any> = {};
-        result.components.forEach((c) => {
-          signals[c.id] = c.outputs[0]?.value ?? c.inputs[0]?.value ?? 0;
-        });
-
-        setWaveformSamples((prev) => [
-          ...prev.slice(-30),
-          { timestamp: Date.now(), signals },
-        ]);
-
-        setSimState((s) => ({
-          ...s,
-          tickCount: s.tickCount + 1,
-          errors: result.errors,
-        }));
-
-        return {
-          ...currProject,
-          components: result.components,
-          wires: result.wires,
-        };
+      const signals: Record<string, 0 | 1 | 'X' | 'Z'> = {};
+      result.components.forEach((component) => {
+        signals[component.id] = component.outputs[0]?.value ?? component.inputs[0]?.value ?? 'X';
       });
-    }, intervalMs);
 
-    return () => clearInterval(timer);
+      setWaveformSamples((prev) => [
+        ...prev.slice(-30),
+        { timestamp: Date.now(), signals },
+      ]);
+      setSimState((state) => ({
+        ...state,
+        tickCount: state.tickCount + 1,
+        errors: result.errors,
+      }));
+        scheduleTick();
+      }, intervalMs);
+    };
+    scheduleTick();
+
+    return () => {
+      disposed = true;
+      clearTimeout(timer);
+    };
   }, [simState.running, simState.frequencyHz]);
 
   // Keyboard shortcut listeners (Space for Run/Pause, Undo/Redo)
@@ -257,19 +285,61 @@ export default function App() {
 
   // Single step clock pulse
   const handleSingleStep = () => {
-    setProject((currProject) => {
-      const result = simulateCircuit(currProject, true);
-      setSimState((s) => ({
-        ...s,
-        tickCount: s.tickCount + 1,
-        errors: result.errors,
-      }));
-      return {
-        ...currProject,
-        components: result.components,
-        wires: result.wires,
-      };
-    });
+    const result = simulateCircuit(projectRef.current, true);
+    const nextProject = {
+      ...projectRef.current,
+      components: result.components,
+      wires: result.wires,
+    };
+    projectRef.current = nextProject;
+    setProject(nextProject);
+    setSimState((state) => ({
+      ...state,
+      running: false,
+      tickCount: state.tickCount + 1,
+      errors: result.errors,
+    }));
+  };
+
+  const handleResetSimulation = () => {
+    const resetProject = resetProjectRuntime(project);
+    const result = simulateCircuit(resetProject, false);
+    const evaluatedProject = {
+      ...resetProject,
+      components: result.components,
+      wires: result.wires,
+    };
+    projectRef.current = evaluatedProject;
+    setProject(evaluatedProject);
+    setSimState((state) => ({
+      ...state,
+      running: false,
+      tickCount: 0,
+      errors: result.errors,
+    }));
+    setWaveformSamples([]);
+    saveCurrentProject(evaluatedProject);
+    soundFx.stopBuzzer();
+  };
+
+  const handleLoadCircuit = (circuit: CircuitProject) => {
+    const loaded = resetProjectRuntime(circuit);
+    const result = simulateCircuit(loaded, false);
+    const evaluated = { ...loaded, components: result.components, wires: result.wires };
+    projectRef.current = evaluated;
+    setProject(evaluated);
+    setAutoPulldown(evaluated.autoPulldown ?? false);
+    setSimState((state) => ({
+      ...state,
+      running: false,
+      tickCount: 0,
+      errors: result.errors,
+    }));
+    setWaveformSamples([]);
+    setSelectedCompId(null);
+    setSelectedWireId(null);
+    saveCurrentProject(evaluated);
+    soundFx.stopBuzzer();
   };
 
   // Open Inside the Gate modal
@@ -290,9 +360,9 @@ export default function App() {
       setActiveBenchmarkId(benchmark.id);
       setSelectedCompId(null);
       setSelectedWireId(null);
-      handleUpdateProject(JSON.parse(JSON.stringify(benchmark.project)));
+      handleLoadCircuit(JSON.parse(JSON.stringify(benchmark.project)));
     },
-    [handleUpdateProject]
+    [handleLoadCircuit]
   );
 
   // Select Playground (Blank canvas where student develops any circuit and exports as JSON)
@@ -300,7 +370,7 @@ export default function App() {
     setActiveBenchmarkId('playground');
     setSelectedCompId(null);
     setSelectedWireId(null);
-    handleUpdateProject({
+    handleLoadCircuit({
       id: 'playground',
       name: 'Playground (Custom Circuit)',
       description: 'Blank student playground canvas. Develop any circuit freely and export using the share icon as JSON.',
@@ -311,7 +381,7 @@ export default function App() {
       wires: [],
       autoPulldown: false,
     });
-  }, [handleUpdateProject]);
+  }, [handleLoadCircuit]);
 
   return (
     <div className={`flex flex-col h-screen w-screen overflow-hidden font-sans transition-colors duration-150 ${
@@ -320,10 +390,11 @@ export default function App() {
       {/* 1. Top Navigation & Simulation Toolbar */}
       <TopNavbar
         projectName={project.name}
-        onChangeProjectName={(name) => setProject({ ...project, name })}
+        onChangeProjectName={(name) => handleUpdateProject({ ...project, name }, false)}
         simState={simState}
         onToggleRun={() => setSimState((s) => ({ ...s, running: !s.running }))}
         onSingleStep={handleSingleStep}
+        onReset={handleResetSimulation}
         onChangeFrequency={(hz) => setSimState((s) => ({ ...s, frequencyHz: hz }))}
         onOpenInsideGate={() => handleOpenInsideGate('AND')}
         onOpenTruthTable={() => setIsTruthTableOpen(true)}
@@ -453,9 +524,7 @@ export default function App() {
       <ProjectManagerModal
         currentProject={project}
         onLoadProject={(proj) => {
-          setProject(proj);
-          setSelectedCompId(null);
-          setSelectedWireId(null);
+          handleLoadCircuit(proj);
         }}
         isOpen={isProjectsOpen}
         onClose={() => setIsProjectsOpen(false)}
@@ -465,9 +534,7 @@ export default function App() {
       <ExportModal
         project={project}
         onImportProject={(proj) => {
-          setProject(proj);
-          setSelectedCompId(null);
-          setSelectedWireId(null);
+          handleLoadCircuit(proj);
         }}
         isOpen={isExportOpen}
         onClose={() => setIsExportOpen(false)}

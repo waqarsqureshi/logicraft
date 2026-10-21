@@ -44,7 +44,7 @@ A powerful, interactive **digital logic circuit simulator** built with React and
 ## Quick Start
 
 ### Prerequisites
-- Node.js (v18 or higher recommended)
+- Node.js 20.19+ (required by the current Vite toolchain)
 - npm or yarn
 
 ### Installation
@@ -79,7 +79,13 @@ npm run preview
 1. **Open the Component Palette** - Access the sidebar to browse available components
 2. **Add Components** - Click or drag components onto the canvas
 3. **Connect Components** - Draw wires between pins to create connections
-4. **Simulate** - Watch your circuit in action in real-time
+4. **Run** - Simulation opens stopped; click **Run** to start the clock, **Step** for one pulse, or **Reset** to return to the initial state and stop.
+
+### Simulation Values and State
+- Signals use `0` (LOW), `1` (HIGH), `X` (unknown/conflicting), and `Z` (floating). Disconnected inputs resolve to `Z` unless Auto-Pulldown is enabled.
+- New and imported circuits start with reset simulation state; clock counters and timing history are not restored from saved runtime data.
+- D flip-flops without a declared initial state start at `X`; templates with an explicit initial state restore it on Reset. Flip-flops capture only on a known LOW-to-HIGH clock edge and hold between edges.
+- Unknown signals are shown separately from invalid-connection/contention errors. Combinational feedback is evaluated with a fixed pass limit.
 
 ### Analyzing Circuits
 1. **Truth Table** - Generate automatic truth tables for combinational logic
@@ -140,6 +146,7 @@ npm run build    # Build for production
 npm run preview  # Preview production build
 npm run clean    # Remove build artifacts
 npm run lint     # Run TypeScript type checking
+npm test         # Run simulation regression tests
 ```
 
 ### Environment Variables

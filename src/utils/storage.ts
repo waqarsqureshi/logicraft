@@ -5,6 +5,7 @@
 
 import { CircuitProject } from '../types/circuit';
 import { CIRCUIT_TEMPLATES } from '../data/templates';
+import { resetProjectRuntime } from '../engine/simulation';
 
 const STORAGE_KEY_CURRENT = 'logicraft_current_project';
 const STORAGE_KEY_SAVED_LIST = 'logicraft_saved_projects';
@@ -50,8 +51,9 @@ export function loadCurrentProject(): CircuitProject {
 
 export function saveCurrentProject(project: CircuitProject) {
   try {
+    const persistable = resetProjectRuntime(project);
     const updated = {
-      ...project,
+      ...persistable,
       updatedAt: Date.now(),
     };
     localStorage.setItem(STORAGE_KEY_CURRENT, JSON.stringify(updated));
@@ -72,15 +74,16 @@ export function getSavedProjectsList(): { id: string; name: string; updatedAt: n
 
 export function saveProjectToSlot(project: CircuitProject) {
   try {
-    const list = getSavedProjectsList().filter((p) => p.id !== project.id);
+    const persistable = resetProjectRuntime(project);
+    const list = getSavedProjectsList().filter((p) => p.id !== persistable.id);
     list.unshift({
-      id: project.id,
-      name: project.name,
+      id: persistable.id,
+      name: persistable.name,
       updatedAt: Date.now(),
-      compCount: project.components.length,
+      compCount: persistable.components.length,
     });
     localStorage.setItem(STORAGE_KEY_SAVED_LIST, JSON.stringify(list));
-    localStorage.setItem(`logicraft_slot_${project.id}`, JSON.stringify(project));
+    localStorage.setItem(`logicraft_slot_${persistable.id}`, JSON.stringify(persistable));
   } catch (e) {
     console.error('Failed to save to slot:', e);
   }
@@ -107,7 +110,7 @@ export function deleteSavedProjectSlot(projectId: string) {
 }
 
 export function exportProjectToJSON(project: CircuitProject): string {
-  return JSON.stringify(project, null, 2);
+  return JSON.stringify(resetProjectRuntime(project), null, 2);
 }
 
 export function downloadProjectFile(project: CircuitProject) {
@@ -124,11 +127,12 @@ export function downloadProjectFile(project: CircuitProject) {
 export function generateShareableURL(project: CircuitProject): string {
   try {
     // Compress essential data
+    const persistable = resetProjectRuntime(project);
     const minimal = {
-      id: project.id,
-      name: project.name,
-      components: project.components,
-      wires: project.wires,
+      id: persistable.id,
+      name: persistable.name,
+      components: persistable.components,
+      wires: persistable.wires,
     };
     const json = JSON.stringify(minimal);
     const encoded = btoa(encodeURIComponent(json));
