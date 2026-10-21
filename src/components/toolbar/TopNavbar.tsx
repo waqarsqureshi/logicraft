@@ -302,26 +302,27 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
       {/* ========================================================================= */}
       {/* 1. MOBILE COMPACT HEADER (< 768px: Samsung Galaxy, iPhones, small screens) */}
       {/* ========================================================================= */}
-      <div className="flex md:hidden items-center justify-between h-14 px-2.5 sm:px-3 gap-1 w-full">
+      <div className="flex md:hidden items-center justify-between h-14 px-1.5 sm:px-3 gap-1 w-full max-w-full">
         {/* Left: Component Palette Drawer Toggle & Logo */}
-        <div className="flex items-center gap-1.5 shrink-0">
+        <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
           <button
             onClick={onTogglePalette}
-            className={`p-1.5 rounded-xl border transition-colors cursor-pointer ${
+            className={`p-1.5 rounded-lg border transition-colors cursor-pointer shrink-0 flex items-center justify-center ${
               isLight
                 ? 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200'
                 : 'bg-slate-800 text-slate-200 border-slate-700 hover:bg-slate-700'
             }`}
             title="Open Component Library Side Tab (Gates, Inputs, Outputs)"
+            aria-label="Open component library"
           >
-            <Menu className="w-4 h-4" />
+            <Menu className="w-4 h-4 shrink-0" />
           </button>
 
           {/* Crest icon on mobile (< sm) to prevent crowding; compact with title on sm: */}
-          <div className="block sm:hidden">
+          <div className="block sm:hidden shrink-0">
             <GalwayLogo variant="icon" theme={theme} size="sm" />
           </div>
-          <div className="hidden sm:block">
+          <div className="hidden sm:block shrink-0">
             <GalwayLogo variant="compact" theme={theme} size="sm" />
           </div>
         </div>
@@ -330,7 +331,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
         <div className="flex items-center gap-1 shrink-0">
           <button
             onClick={onToggleRun}
-            className={`flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer ${
+            className={`flex items-center justify-center gap-1 px-2 sm:px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all shadow-xs cursor-pointer shrink-0 ${
               simState.running
                 ? 'bg-emerald-600 text-white'
                 : isLight
@@ -338,16 +339,17 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
                 : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700'
             }`}
             title={simState.running ? 'Pause Simulator' : 'Run Simulator Clock'}
+            aria-label={simState.running ? 'Pause Simulator' : 'Run Simulator Clock'}
           >
             {simState.running ? (
               <>
-                <Pause className="w-3 h-3 fill-current" />
-                <span className="text-[11px]">Running</span>
+                <Pause className="w-3.5 h-3.5 fill-current shrink-0" />
+                <span className="hidden min-[380px]:inline text-[11px]">Running</span>
               </>
             ) : (
               <>
-                <Play className="w-3 h-3 fill-current" />
-                <span className="text-[11px]">Run</span>
+                <Play className="w-3.5 h-3.5 fill-current shrink-0" />
+                <span className="hidden min-[380px]:inline text-[11px]">Run</span>
               </>
             )}
           </button>
@@ -355,18 +357,19 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
           {/* Single Step Pulse */}
           <button
             onClick={onSingleStep}
-            className={`p-1 rounded-lg border transition-colors cursor-pointer ${
+            className={`p-1.5 rounded-lg border transition-colors cursor-pointer shrink-0 flex items-center justify-center ${
               isLight
                 ? 'border-slate-200 text-slate-600 hover:bg-slate-100'
                 : 'border-slate-800 text-slate-400 hover:bg-slate-800'
             }`}
             title="Step 1 Clock Pulse"
+            aria-label="Step 1 Clock Pulse"
           >
-            <SkipForward className="w-3.5 h-3.5" />
+            <SkipForward className="w-3.5 h-3.5 shrink-0" />
           </button>
           <button
             onClick={onReset}
-            className={`p-1 rounded-lg border transition-colors cursor-pointer ${
+            className={`p-1.5 rounded-lg border transition-colors cursor-pointer shrink-0 flex items-center justify-center ${
               isLight
                 ? 'border-slate-200 text-slate-600 hover:bg-slate-100'
                 : 'border-slate-800 text-slate-400 hover:bg-slate-800'
@@ -374,41 +377,42 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
             title="Reset circuit state and stop simulation"
             aria-label="Reset simulation"
           >
-            <RotateCcw className="w-3.5 h-3.5" />
+            <RotateCcw className="w-3.5 h-3.5 shrink-0" />
           </button>
         </div>
 
-        {/* Right: 1-Click Truth Table & Slide-Out Drawer Menu Trigger */}
-        <div className="flex items-center gap-1 sm:gap-1.5 shrink-0 min-w-0">
-          {/* Direct 1-Click Truth Table button on Mobile - sized & styled with generous room so it NEVER cuts off */}
+        {/* Right: 1-Click Truth Table, Help Guide & Slide-Out Drawer Menu Trigger */}
+        <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+          {/* Direct 1-Click Truth Table button on Mobile */}
           <button
             onClick={onOpenTruthTable}
-            className="flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-xs transition-transform active:scale-95 cursor-pointer shrink-0"
+            className="flex items-center justify-center gap-1 px-2 sm:px-2.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-xs transition-transform active:scale-95 cursor-pointer shrink-0"
             title="Generate Truth Table & Mathematical Boolean Equations"
             aria-label="Open truth table"
           >
             <Table className="w-3.5 h-3.5 shrink-0" />
-            <span className="text-[11px] font-bold">Table</span>
+            <span className="hidden min-[410px]:inline text-[11px] font-bold">Table</span>
           </button>
 
+          {/* Help & Circuit Controls Guide (?) Icon */}
           <button
             type="button"
             onClick={() => setIsHelpOpen(true)}
-            className={`p-2 rounded-xl border focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#840038] ${
+            className={`p-1.5 sm:p-2 rounded-lg border transition-colors cursor-pointer shrink-0 flex items-center justify-center focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#840038] ${
               isLight
-                ? 'bg-white text-slate-600 border-slate-300 hover:bg-slate-100'
-                : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700'
+                ? 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-300'
+                : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700'
             }`}
-            title="Help with circuit controls"
+            title="Help with circuit controls & quick guide"
             aria-label="Help with circuit controls"
           >
-            <CircleHelp className="w-4 h-4" />
+            <CircleHelp className="w-4 h-4 shrink-0 text-[#840038] dark:text-rose-400" />
           </button>
 
           {/* Mobile Drawer Menu Toggle (Hamburger / App Actions) */}
           <button
             onClick={() => setIsMobileDrawerOpen(true)}
-            className={`flex items-center gap-1 p-2 rounded-xl border transition-all cursor-pointer ${
+            className={`p-1.5 sm:p-2 rounded-lg border transition-all cursor-pointer shrink-0 flex items-center justify-center ${
               isLight
                 ? 'bg-slate-100 hover:bg-slate-200 border-slate-300 text-slate-800'
                 : 'bg-slate-800 hover:bg-slate-700 border-slate-700 text-white'
@@ -416,7 +420,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
             title="Open Mobile Navigation & Action Menu Drawer"
             aria-label="Open Navigation Menu"
           >
-            <MoreVertical className="w-4 h-4 text-[#840038] dark:text-rose-400" />
+            <MoreVertical className="w-4 h-4 shrink-0 text-[#840038] dark:text-rose-400" />
           </button>
         </div>
       </div>
@@ -893,7 +897,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
           >
             {/* Drawer Header */}
             <div
-              className={`p-4 border-b flex items-center justify-between shrink-0 ${
+              className={`p-3.5 sm:p-4 border-b flex items-center justify-between shrink-0 ${
                 isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-950 border-slate-800'
               }`}
             >
@@ -904,33 +908,37 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
                 </span>
               </div>
 
-              <button
-                onClick={() => setIsMobileDrawerOpen(false)}
-                className={`p-2 rounded-xl transition-colors cursor-pointer ${
-                  isLight
-                    ? 'text-slate-500 hover:text-slate-900 hover:bg-slate-200'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800'
-                }`}
-                title="Close Navigation Drawer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setIsMobileDrawerOpen(false);
-                  setIsHelpOpen(true);
-                }}
-                className={`p-2 rounded-xl transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#840038] ${
-                  isLight
-                    ? 'text-slate-500 hover:text-slate-900 hover:bg-slate-200'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800'
-                }`}
-                title="Help with circuit controls"
-                aria-label="Help with circuit controls"
-              >
-                <CircleHelp className="w-5 h-5" />
-              </button>
+              <div className="flex items-center gap-1 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMobileDrawerOpen(false);
+                    setIsHelpOpen(true);
+                  }}
+                  className={`p-2 rounded-xl transition-colors cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#840038] ${
+                    isLight
+                      ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-200'
+                      : 'text-slate-300 hover:text-white hover:bg-slate-800'
+                  }`}
+                  title="LogiCraft Guide & Controls (?)"
+                  aria-label="Help with circuit controls"
+                >
+                  <CircleHelp className="w-5 h-5 text-[#840038] dark:text-rose-400" />
+                </button>
+
+                <button
+                  onClick={() => setIsMobileDrawerOpen(false)}
+                  className={`p-2 rounded-xl transition-colors cursor-pointer ${
+                    isLight
+                      ? 'text-slate-500 hover:text-slate-900 hover:bg-slate-200'
+                      : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                  }`}
+                  title="Close Navigation Drawer"
+                  aria-label="Close Navigation Drawer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
             </div>
 
             {/* Drawer Scrollable Content */}
@@ -1209,6 +1217,23 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
                     </div>
                     <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
                   </button>
+
+                  <button
+                    onClick={() => {
+                      setIsMobileDrawerOpen(false);
+                      setIsHelpOpen(true);
+                    }}
+                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
+                      isLight ? 'hover:bg-slate-100 text-slate-700' : 'hover:bg-slate-800 text-slate-200'
+                    }`}
+                    title="Open LogiCraft Help & Controls Guide"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <CircleHelp className="w-4 h-4 text-[#840038] dark:text-rose-400" />
+                      <span>LogiCraft Help & User Guide (?)</span>
+                    </div>
+                    <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+                  </button>
                 </div>
               </div>
 
@@ -1324,7 +1349,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
 
       {isHelpOpen && (
         <div
-          className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm"
+          className="fixed inset-0 z-[70] flex items-center justify-center p-2.5 sm:p-4 bg-slate-950/60 backdrop-blur-sm"
           onMouseDown={(event) => {
             if (event.target === event.currentTarget) setIsHelpOpen(false);
           }}
@@ -1333,13 +1358,13 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
             role="dialog"
             aria-modal="true"
             aria-labelledby="controls-help-title"
-            className={`w-full max-w-2xl max-h-[88vh] rounded-2xl border shadow-2xl overflow-hidden flex flex-col ${
+            className={`w-full max-w-2xl max-h-[90vh] sm:max-h-[88vh] rounded-2xl border shadow-2xl overflow-hidden flex flex-col ${
               isLight
                 ? 'bg-white border-slate-200 text-slate-800'
                 : 'bg-slate-900 border-slate-700 text-slate-100'
             }`}
           >
-            <div className={`flex items-center justify-between px-5 py-4 border-b ${
+            <div className={`flex items-center justify-between px-3.5 sm:px-5 py-3 sm:py-4 border-b ${
               isLight ? 'border-slate-200' : 'border-slate-800'
             }`}>
               <div className="flex items-center gap-2.5">
