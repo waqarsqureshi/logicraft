@@ -221,14 +221,19 @@ describe('simulation engine', () => {
       .some((wire) => wire.value === 'X'));
 
     const observedCounts = new Set<string>();
-    for (let tick = 0; tick < 12; tick++) {
+    const sequenceOnRisingEdges: number[] = [];
+    for (let tick = 0; tick < 16; tick++) {
       state = simulate(state, true);
       const q0 = getComponent(state, 'ff0').state?.internalQ;
       const q1 = getComponent(state, 'ff1').state?.internalQ;
       assert.ok((q0 === 0 || q0 === 1) && (q1 === 0 || q1 === 1));
       observedCounts.add(`${q1}${q0}`);
+      if (tick % 2 === 0) {
+        sequenceOnRisingEdges.push((q1 << 1) | q0);
+      }
     }
     assert.deepEqual([...observedCounts].sort(), ['00', '01', '10', '11']);
+    assert.deepEqual(sequenceOnRisingEdges, [1, 2, 3, 0, 1, 2, 3, 0]);
   });
 
   it('runs the supplied 4-bit D flip-flop ripple counter with known feedback signals', () => {
@@ -244,21 +249,27 @@ describe('simulation engine', () => {
       .some((wire) => wire.value === 'X'));
 
     const observedStates = new Set<string>();
+    const sequenceOnRisingEdges: number[] = [];
     for (let tick = 0; tick < 32; tick++) {
       state = simulate(state, true);
       for (const id of ['ff0', 'ff1', 'ff2', 'ff3']) {
         const q = getComponent(state, id).state?.internalQ;
         assert.ok(q === 0 || q === 1, `${id} should retain a known state`);
       }
-      observedStates.add(['ff3', 'ff2', 'ff1', 'ff0']
+      const bits = ['ff3', 'ff2', 'ff1', 'ff0']
         .map((id) => getComponent(state, id).state?.internalQ)
-        .join(''));
+        .join('');
+      observedStates.add(bits);
+      if (tick % 2 === 0) {
+        sequenceOnRisingEdges.push(parseInt(bits, 2));
+      }
     }
     const outputBits = ['ff3', 'ff2', 'ff1', 'ff0']
       .map((id) => getComponent(state, id).state?.internalQ)
       .join('');
     assert.notEqual(outputBits, 'XXXX');
-    assert.ok(observedStates.size >= 4, 'the counter should advance through multiple binary states');
+    assert.equal(observedStates.size, 16, 'the counter should visit all 16 binary states');
+    assert.deepEqual(sequenceOnRisingEdges, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0]);
   });
 
   it('reports invalid dangling wires instead of evaluating them', () => {
@@ -336,5 +347,70 @@ describe('simulation engine', () => {
 
     assert.equal(table?.rows.length, 4);
     assert.deepEqual(table?.rows.map((row) => row.outputs.led), [0, 0, 0, 1]);
+  });
+
+  it('loads parallel data (1011) and streams out serial bits (1011) on the 4-bit PISO shift register', () => {
+    const piso = ADVANCED_CIRCUITS.find((circuit) => circuit.id === 'd-ff-4bit-piso-shift');
+    assert.ok(piso);
+    let state = resetProjectRuntime(piso.project);
+    state = simulate(state);
+
+    // Initial state: D3=1, D2=0, D1=1, D0=1 pre-loaded and ready in Shift mode (Mode = 0)
+    assert.equal(getComponent(state, 'ff3').state?.internalQ, 1);
+    assert.equal(getComponent(state, 'ff2').state?.internalQ, 0);
+    assert.equal(getComponent(state, 'ff1').state?.internalQ, 1);
+    assert.equal(getComponent(state, 'ff0').state?.internalQ, 1);
+    assert.equal(getComponent(state, 'led_serial').inputs[0].value, 1); // Bit 1 of 1011
+
+    // Shift 1: rising clock edge shifts bits right; 0 shifts into ff0
+    state = simulate(state, true);
+    assert.equal(getComponent(state, 'ff3').state?.internalQ, 0); // was Q2 = 0
+    assert.equal(getComponent(state, 'ff2').state?.internalQ, 1); // was Q1 = 1
+    assert.equal(getComponent(state, 'ff1').state?.internalQ, 1); // was Q0 = 1
+    assert.equal(getComponent(state, 'ff0').state?.internalQ, 0); // shifted in GND = 0
+    assert.equal(getComponent(state, 'led_serial').inputs[0].value, 0); // Bit 0 of 1011
+    state = simulate(state, true);
+
+    // Shift 2:
+    state = simulate(state, true);
+    assert.equal(getComponent(state, 'ff3').state?.internalQ, 1); // was Q2 = 1
+    assert.equal(getComponent(state, 'ff2').state?.internalQ, 1); // was Q1 = 1
+    assert.equal(getComponent(state, 'ff1').state?.internalQ, 0);
+    assert.equal(getComponent(state, 'ff0').state?.internalQ, 0);
+    assert.equal(getComponent(state, 'led_serial').inputs[0].value, 1); // Bit 1 of 1011
+    state = simulate(state, true);
+
+    // Shift 3:
+    state = simulate(state, true);
+    assert.equal(getComponent(state, 'ff3').state?.internalQ, 1); // was Q2 = 1
+    assert.equal(getComponent(state, 'ff2').state?.internalQ, 0);
+    assert.equal(getComponent(state, 'ff1').state?.internalQ, 0);
+    assert.equal(getComponent(state, 'ff0').state?.internalQ, 0);
+    assert.equal(getComponent(state, 'led_serial').inputs[0].value, 1); // Bit 1 of 1011
+    state = simulate(state, true);
+
+    // Shift 4: all parallel bits shifted out, register drained
+    state = simulate(state, true);
+    assert.equal(getComponent(state, 'ff3').state?.internalQ, 0);
+    assert.equal(getComponent(state, 'ff2').state?.internalQ, 0);
+    assert.equal(getComponent(state, 'ff1').state?.internalQ, 0);
+    assert.equal(getComponent(state, 'ff0').state?.internalQ, 0);
+    assert.equal(getComponent(state, 'led_serial').inputs[0].value, 0);
+    state = simulate(state, true);
+
+    // Test Reload: switch Mode to 1 (Load) and pulse clock -> re-latches D3..D0 = 1011
+    state = {
+      ...state,
+      components: state.components.map((c) =>
+        c.id === 'sw_mode' ? { ...c, state: { ...c.state, toggle: true } } : c
+      ),
+    };
+    state = simulate(state);
+    state = simulate(state, true); // clock edge in Load mode
+    assert.equal(getComponent(state, 'ff3').state?.internalQ, 1);
+    assert.equal(getComponent(state, 'ff2').state?.internalQ, 0);
+    assert.equal(getComponent(state, 'ff1').state?.internalQ, 1);
+    assert.equal(getComponent(state, 'ff0').state?.internalQ, 1);
+    assert.equal(getComponent(state, 'led_serial').inputs[0].value, 1);
   });
 });

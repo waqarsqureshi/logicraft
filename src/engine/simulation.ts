@@ -697,9 +697,9 @@ export function simulateCircuit(
     });
   }
 
+  // Synchronize clock connection keys when wiring changes
   for (const component of components) {
     if (!isSequentialType(component.type)) continue;
-    const inputs = component.inputs.map((pin) => pin.value);
     const clockIndex = clockInputIndex(component.type);
     if (clockIndex !== null) {
       const clockPin = component.inputs[clockIndex];
@@ -711,17 +711,110 @@ export function simulateCircuit(
           lastClock: normalizeLogicValue(clockPin?.value),
           clockConnectionKey: connectionKey,
         };
-      } else {
-        const { nextState } = evaluateComponent(component, inputs, clockTick);
-        if (nextState) component.state = { ...component.state, ...nextState };
-        component.state = { ...component.state, clockConnectionKey: connectionKey };
-        continue;
       }
     }
-    const { nextState } = evaluateComponent(component, inputs, false);
-    if (nextState) component.state = { ...component.state, ...nextState };
   }
 
+  // Multi-pass sequential evaluation for ripple counters and cascading sequential logic
+  const triggeredInThisStep = new Set<string>();
+  const MAX_RIPPLE_PASSES = 16;
+
+  if (clockTick) {
+    for (let pass = 0; pass < MAX_RIPPLE_PASSES; pass++) {
+      const triggeredComponents: Array<{
+        component: CircuitComponent;
+        nextState: Record<string, any>;
+        outputs: LogicValue[];
+      }> = [];
+
+      for (const component of components) {
+        if (!isSequentialType(component.type)) continue;
+        if (triggeredInThisStep.has(component.id)) continue;
+
+        const clockIndex = clockInputIndex(component.type);
+        if (clockIndex === null) continue;
+
+        const clockPin = component.inputs[clockIndex];
+        const clk = normalizeLogicValue(clockPin?.value);
+        const lastClock = normalizeLogicValue(component.state?.lastClock);
+
+        // Positive edge-triggered: 0 -> 1
+        if (lastClock === 0 && clk === 1) {
+          const inputs = component.inputs.map((pin) => pin.value);
+          const { outputs, nextState } = evaluateComponent(component, inputs, true);
+          if (nextState) {
+            triggeredComponents.push({ component, nextState, outputs });
+          }
+        }
+      }
+
+      if (triggeredComponents.length === 0) {
+        break;
+      }
+
+      // Commit state and output pin updates simultaneously for this pass
+      for (const { component, nextState, outputs } of triggeredComponents) {
+        triggeredInThisStep.add(component.id);
+        component.state = {
+          ...component.state,
+          ...nextState,
+          lastClock: 1,
+        };
+        if (component.type === 'D_FLIP_FLOP') {
+          component.state.internalQbar = normalizeLogicValue(component.state.internalQ) === 0
+            ? 1
+            : normalizeLogicValue(component.state.internalQ) === 1
+              ? 0
+              : 'X';
+        }
+        outputs.forEach((value, index) => {
+          const output = component.outputs[index];
+          if (output) {
+            output.value = normalizeLogicValue(value);
+            output.voltage = logicToVoltage(output.value);
+          }
+        });
+      }
+
+      // Settle combinational wires so that new outputs propagate to downstream clock inputs
+      settleCombinational();
+    }
+  }
+
+  // Handle unclocked sequential components (e.g. latches)
+  for (const component of components) {
+    if (!isSequentialType(component.type)) continue;
+    const clockIndex = clockInputIndex(component.type);
+    if (clockIndex === null) {
+      const { outputs, nextState } = evaluateComponent(component, component.inputs.map((pin) => pin.value), false);
+      if (nextState) component.state = { ...component.state, ...nextState };
+      outputs.forEach((value, index) => {
+        const output = component.outputs[index];
+        if (output) {
+          output.value = normalizeLogicValue(value);
+          output.voltage = logicToVoltage(output.value);
+        }
+      });
+    }
+  }
+
+  // Update lastClock for all clocked sequential components to reflect their final settled clock level
+  for (const component of components) {
+    if (!isSequentialType(component.type)) continue;
+    const clockIndex = clockInputIndex(component.type);
+    if (clockIndex !== null) {
+      const clockPin = component.inputs[clockIndex];
+      const clockWires = inputPinWires.get(clockPin?.id || '') || [];
+      const connectionKey = clockWires.map((wire) => `${wire.fromComponentId}:${wire.fromPinId}`).sort().join('|');
+      component.state = {
+        ...component.state,
+        lastClock: normalizeLogicValue(clockPin?.value),
+        clockConnectionKey: connectionKey,
+      };
+    }
+  }
+
+  // Ensure all sequential outputs are reflected
   for (const component of components) {
     if (!isSequentialType(component.type)) continue;
     const { outputs, nextState } = evaluateComponent(component, component.inputs.map((pin) => pin.value), false);
